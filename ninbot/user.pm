@@ -33,10 +33,6 @@ sub new {
     #              '-passwd' => ''      #string
     #             };
 
-    while ( scalar(@_) >= 2 ) {
-        $self_user->{ shift() } = shift();
-    }
-
     bless( $self_user, $class );
     my $self = &main::get_Self;
     $self->log( 4, "<User> Created new User object" );
