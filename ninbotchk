@@ -1,0 +1,19 @@
+#!/bin/sh
+# This is the crontab script for ninbot.
+#
+# Please change the following path to your ninbot-directory.
+
+NINBOTPATH=/home/ninharp/ninbot/
+
+# the rest should be kept as is
+
+if test -r $NINBOTPATH/ninbot.pid; then
+    NINBOTPID=$(cat $NINBOTPATH/ninbot.pid)
+    if $(kill -CHLD $NINBOTPID >/dev/null 2>&1)
+    then
+	exit 0
+    fi
+fi
+cd $NINBOTPATH
+./bot.pl &>/dev/null
+
