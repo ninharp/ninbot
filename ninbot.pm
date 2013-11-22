@@ -759,10 +759,8 @@ sub IRC_on_kick {
     if ($user eq $self->{config}->{irc_nickname}) {
       $self->log(1, "<Main:IRC> I was kicked from ".$from_channel);
       $self->{conn}->join($from_channel);
-      if (!$self->{_CHANNEL}->is_PermChan($from_channel)) {
-	$self->{conn}->privmsg($from_channel, "Das nächste mal gehts auch freundlicher! *beleidigtsei*");
-	$self->{conn}->part($from_channel);
-      }
+	  $self->{conn}->privmsg($from_channel, "Das nächste mal gehts auch freundlicher! *beleidigtsei*");
+	  $self->{conn}->part($from_channel);
     }
   }
 }
