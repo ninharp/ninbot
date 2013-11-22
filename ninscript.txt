@@ -1,14 +1,16 @@
 ninBot Scripting Documentation
+==============================
 
 Grundlegende Channelkommandos
+-----------------------------
 
-Digitale Eieruhr:
-	!timer MINUTEN EREIGNIS
+**Digitale Eieruhr:**
+	'!timer MINUTEN EREIGNIS'
 
 		z.B. "!timer 12 Pizza" würde einen 12 Minuten Timer starten und nach 12 Minuten *klingeln*
 
-ninScript Code Testen:
-	!eval CODE
+**ninScript Code Testen:**
+	'!eval CODE'
 		z.B. "!eval say &parnick;"
 
 Verlassen der Raumes initiieren:
