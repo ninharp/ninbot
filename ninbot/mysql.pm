@@ -147,6 +147,7 @@ sub match {
           ->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
         if ( $sth->execute ) {
             while ( my @row = $sth->fetchrow_array() ) {
+				if ( !defined $row[3] ) { $row[3] = ""; }
                 if ( !defined $row[4] ) { $row[4] = ""; }
                 if ( !defined $row[5] ) { $row[5] = ""; }
                 my $return = join( $join, @row );
