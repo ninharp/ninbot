@@ -1,0 +1,77 @@
+CPAN Module Dependencies für Perl
+
+Config::General
+Net::IRC
+DBI
+DBD::mysql
+
+
+Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
+
+1. Als allererstes müssen wir schauen das wir die Software die wir zusätzlich brauchen auch installiert haben.
+	Wir benötigen:
+		- Perl
+		- MySQL5 Client
+		- Perl CPAN Module Net::IRC
+		- Perl CPAN Module Config::General
+		- Perl CPAN Module DBI
+		- Perl CPAN Module DBD::mysql
+		
+	Um Perl, MySQL Client zu installieren schaue bitte nach wie du das bei deiner Linux Distribution machen kannst.
+	
+	Die Perl CPAN Module werden wie folgt nacheinander installiert
+	
+	perl -MCPAN -e"install Net::IRC"
+	perl -MCPAN -e"install Config::General"
+	perl -MCPAN -e"install DBI"
+	perl -MCPAN -e"install DBD::mysql"
+	
+2. Wenn alles funktioniert hat und die Installation der Module abgeschlossen ist machen wir uns dadran den Bot zu konfigurieren
+	Dazu entpacken wir die ninbot tar.gz und wechseln in das Verzeichnis
+	
+	tar xzfv ninbot-0.83.tar.gz
+	cd ninbot-0.83
+	
+	Danach kopieren wir die Beispielconfig und editieren Sie danach
+	
+	cp ninbot.conf_sample ninbot.conf
+	nano ninbot.conf
+	
+	In dieser Datei nehmen wir die Einstellungen vor die wir für die mySQL Datenbank und für die IRC Verbindung brauchen.
+	Hier habe ich mal die Relevanten stellen aus der ninbot.conf zusammengestellt, die anderen Variablen in der Datei lassen wir wie sie sind.
+	
+	irc_botmode   1						- Muss der Bot das Botmode Flag haben? (euIRC Appliance)
+	irc_server   irc.hes.de.euirc.net	- IRC Server zu dem Verbunden wird
+	irc_port   6667						- IRC Port auf dem Verbunden wird
+	irc_ident   ninbot					- IRC Ident information
+	irc_nickname   eG0N					- IRC Nickname des Bots
+	irc_email   owner ninharp			- IRC Realname des Bots (im euIRC den Nickname des Owners verwenden)
+	<server>
+		1   irc.hes.de.euirc.net		- IRC Server zu dem Verbunden wird (Sorry für die Redundanz, wird noch geaendert)
+	</server>
+	daemon   0							- Soll der Bot als Daemonprozess im Hintergrund laufen?
+	sql_user   root						- SQL Benutzername
+	sql_password   giq3byna				- SQL Passwort
+	sql_dsn   dbi:mysql:ninbot:localhost:3306
+										- SQL Verbindungsstring (dbi:mysql:DBNAME:DBSERVER:DBPORT)
+	
+	command_trigger   !					- Kommandotrigger (Standard ist !)
+	
+	
+3. mySQL Datenbank anlegen
+
+	Um den Bot auch mit der mySQL Datenbank zu Verbinden, muessen vorher noch die Datenbank und die Tabellen angelegt werden.
+	Dazu liegt in dem Botverzeichnis eine Datei ninbot.sql welche die Definitionen der Datenbank und Tabellen beinhaltet.
+	Diese Legen wir wie folgt an
+	
+	mysql -p -u SQLNUTZER DBNAME < ninbot.sql
+	
+4. Den Bot starten
+	
+	./bot.pl
+	
+
+
+To be continued!
+
+	
