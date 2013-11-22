@@ -244,6 +244,7 @@ sub quit {
 }
 
 # Gets actual IP
+# TODO: change to some better
 sub get_IP {
   my $ipfile = "http://athena.noxa.de/~michael/ip.pl";
   my $ip = `lynx -source $ipfile`;
@@ -359,7 +360,7 @@ sub IRC_on_nick_in_use {
   my $event = shift;
   $self->log(1, "<Main:IRC> Nickname ".$self->{config}->{irc_nickname}." already in use.\n");
   my $nickname = $self->{config}->{irc_nickname};
-  $nickname++;
+  $nickname .= "_";
   $self->log(1, "<Main:IRC> Trying with ".$nickname.".");
   $irc->nick($nickname);
 }
