@@ -86,27 +86,26 @@ sub read_Config {
 
 # chroot($pwd) or die "Couldn't chroot to $pwd: $!"; # Not now!
 
-$bot->log( 0, "<Bot> *** IRC ninBot v" . $bot->{_VERSION} . " ***\n" );
+$bot->log( 0, "<Bot> *** IRC ninBot v" . $bot->{_VERSION} . " ***" );
 
-$bot->log( 0, "<Bot> Reading out configuration..\n" );
+$bot->log( 0, "<Bot> Reading out configuration.." );
 &read_Config();
-$bot->log( 0, "<Bot> Set Debuglevel to " . chop( $config{debug} ) . "\n" )
+$bot->log( 0, "<Bot> Set Debuglevel to " . chop( $config{debug} ) )
   if defined $config{debug};
 $bot->log( 0, "<Bot> Setting up IRC Connection..\n" );
 $bot->setup_IRC();
-$bot->log( 0,
-    "<Bot> - Using IRC Nickname:\t\t" . $config{irc_nickname} . "\n" );
-$bot->log( 0, "<Bot> - Using IRC Server:\t\t" . $config{irc_server} . "\n" );
+$bot->log( 0, "<Bot> - Using IRC Nickname:\t\t" . $config{irc_nickname} );
+$bot->log( 0, "<Bot> - Using IRC Server:\t\t" . $config{irc_server} );
 my %server = %{ $config{server} };
 
 foreach ( keys %server ) {
-    $bot->log( 0, "<Bot> Server $_ = $server{$_}\n" );
+    $bot->log( 0, "<Bot> Server $_ = $server{$_}" );
 }
 
-$bot->log( 0, "<Bot> Setting up IRC Handler..\n" );
+$bot->log( 0, "<Bot> Setting up IRC Handler.." );
 $bot->setup_Handler();
 if ( $config{daemon} ) {
-    $bot->log( 0, "<Bot> Forking Bot..\n" );
+    $bot->log( 0, "<Bot> Forking Bot.." );
     my $pid = fork;
     print "PID=$pid\n";
     &write_Pid($pid) if $pid != 0;
