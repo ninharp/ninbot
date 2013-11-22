@@ -312,6 +312,30 @@ sub _replace_Vars {
             $com =~ s/rand_var\((.*?)\)/$rand_var/i;
         }
     }
+    
+    while ( $com =~ m/rand_com/i ) {
+		my @r_calc = $calc->rand_com_Calc;
+        while ( $r_calc[6] !~ m/r/i ) {
+			@r_calc = $calc->rand_com_Calc;
+        }
+        my ( $r_name, $r_text, $r_author, $r_date, undef, undef, undef ) = @r_calc;
+        $r_name =~ s/^com-/$bot->{config}->{command_trigger}/ig;
+        $com =~ s/rand_com/$r_name/i;
+	}
+    
+    # rand_com
+    # Returns a random command entry
+    while ( $com =~ m/rand_var\((.*?)\)/gi ) {
+        my $var      = $1;
+        my $variable = $inter->_get_Var("data-var-$var");
+        if ( defined $variable ) {
+            my @v_vars   = split( /\@\@/, $variable );
+            my $rand_num = int( rand( scalar(@v_vars) ) );
+            my $rand_var = $v_vars[$rand_num];
+            $self->_replace_Vars($rand_var);
+            $com =~ s/rand_var\((.*?)\)/$rand_var/i;
+        }
+    }
 
     # rand_nick
     # Returns a random nickname from the channel

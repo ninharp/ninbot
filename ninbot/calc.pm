@@ -63,6 +63,25 @@ sub rand_Calc {
     return @ret;
 }
 
+# Gets a random command calc
+sub rand_com_Calc {
+    my $calc_self = shift;
+    my $self      = &main::get_Self;
+    my $ret       = 0;
+    my $dbh       = $calc_self->{_DBH};
+    my @entries   = $dbh->select_all( "calc", ";;;" );
+    my $rand      = int( rand( scalar(@entries) ) );
+    while ( $entries[$rand] !~ m/^com-/i or $entries[$rand] =~ m/^data-/i ) {
+        $rand = int( rand( scalar(@entries) ) );
+    }
+    my $return = $entries[$rand];
+    my @ret = split( /;;;/, $return );
+    if ( $ret[3] =~ m/\n/ ) {
+        $ret[3] =~ s/\n//g;
+    }
+    return @ret;
+}
+
 # Deletes a calc
 sub del_Calc {
     my ( $calc_self, $name ) = @_;
