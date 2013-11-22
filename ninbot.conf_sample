@@ -1,5 +1,5 @@
 develop_script   	lines.sh
-channel_file   		ninbot.channels
+channel_file   		ninbot.ch
 irc_botmode   		1
 irc_server   		irc.hes.de.euirc.net
 irc_port   			6667
