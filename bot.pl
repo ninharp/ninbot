@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 # ninBot Main Class (c) Michael Sauer - https://github.com/ninharp/ninbot
-# bot.pl
+# bot.pl $Id$
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free

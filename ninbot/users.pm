@@ -1,6 +1,5 @@
-package ninbot::users;
-
 # User Module for ninBOT - https://github.com/ninharp/ninbot
+# users.pm $Id$
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -16,6 +15,7 @@ package ninbot::users;
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
+package ninbot::users;
 
 use strict;
 use DBI;

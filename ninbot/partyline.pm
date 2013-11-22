@@ -1,6 +1,5 @@
-package ninbot::partyline;
-
 # Partyline Module for ninBOT - https://github.com/ninharp/ninbot
+# partyline.pm $Id$
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -16,6 +15,8 @@ package ninbot::partyline;
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
+package ninbot::partyline;
+
 use strict;
 use POSIX;
 use IO::Socket;
