@@ -1,7 +1,6 @@
 package ninbot::users;
 
-# User Module for ninBOT - http://ninbot.sourceforge.net
-# $Header: /cvsroot/ninbot/ninbot/ninbot/users.pm,v 1.5 2003/04/29 18:04:20 prahnin Exp $
+# User Module for ninBOT - https://github.com/ninharp/ninbot
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free

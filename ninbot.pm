@@ -1,6 +1,6 @@
 package ninbot;
 
-# ninBot Class (c) Michael Sauer - http://ninbot.sourceforge.net
+# ninBot Bot Class (c) Michael Sauer - https://github.com/ninharp/ninbot
 # ninbot.pm
 #
 # This program is free software; you can redistribute it and/or modify it under

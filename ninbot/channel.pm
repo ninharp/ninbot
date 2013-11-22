@@ -1,7 +1,6 @@
 package ninbot::channel;
 
-# Channel Module for ninBOT - http://ninbot.sourceforge.net
-# $Header: /cvsroot/ninbot/ninbot/ninbot/channel.pm,v 1.1 2003/04/25 11:22:41 prahnin Exp $
+# Channel Module for ninBOT - https://github.com/ninharp/ninbot
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free

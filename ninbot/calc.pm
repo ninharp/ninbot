@@ -1,7 +1,6 @@
 package ninbot::calc;
 
-# Main Calc Module for ninBOT - http://ninbot.sourceforge.net
-# $Header: /cvsroot/ninbot/ninbot/ninbot/calc.pm,v 1.4 2003/05/08 10:38:12 prahnin Exp $
+# Main Calc Module for ninBOT - https://github.com/ninharp/ninbot
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free

@@ -1,7 +1,6 @@
 package ninbot::interpreter;
 
-# CalcScript Interpreter Module for ninBOT - http://ninbot.sourceforge.net
-# $Header: /cvsroot/ninbot/ninbot/ninbot/interpreter.pm,v 1.1 2003/05/08 10:40:25 prahnin Exp $
+# CalcScript Interpreter Module for ninBOT - https://github.com/ninharp/ninbot
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free

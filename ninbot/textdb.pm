@@ -1,7 +1,6 @@
 package ninbot::textdb;
 
-# Calc Module [textDB Backend] for ninBOT - http://ninbot.sourceforge.net
-# $Header: /cvsroot/ninbot/ninbot/ninbot/textdb.pm,v 1.2 2003/04/28 17:04:34 prahnin Exp $
+# Calc Module [textDB Backend] for ninBOT - https://github.com/ninharp/ninbot
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
