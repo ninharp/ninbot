@@ -1,4 +1,4 @@
-# ninBot Bot Class (c) Michael Sauer - https://github.com/ninharp/ninbot
+# ninBot Main Bot Class (c) Michael Sauer - https://github.com/ninharp/ninbot
 # ninbot.pm $Id$
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -109,8 +109,7 @@ sub read_Config {
         else {
 
             # Wrong or no backend! Default text backend
-            $self->log( 1,
-                "<Main> Unknown Database Backend! Falling back to 'textDB'" );
+            $self->log( 1, "<Main> Unknown Database Backend! Falling back to 'textDB'" );
             $self->{config}->{calc_backend} = "textDB";
             $self->{_DBH} = new ninbot::textdb;
         }
@@ -139,8 +138,7 @@ sub read_Config {
         close(CHANS);
     }
     else {
-        print STDOUT
-"Error: $! => ./$self->{config}->{channel_file}\nYou have to run the install.sh script if you run for the first time!\n";
+        print STDOUT "Error: $! => ./$self->{config}->{channel_file}\nYou have to run the install.sh script if you run for the first time!\n";
         exit(1);
     }
     return $ret;
@@ -242,16 +240,11 @@ sub handle_Event {
             my @event_calc = $calc->get_Calc( "data-" . $event );
             if ( defined $event_calc[0] ) {
                 my $event_script = $event_calc[1];
-                $self->log( 3,
-"<Main:IRC> Running $event_type event for channel $from_channel: $event"
-                );
-                $script->parse_Script( $from_nick, $from_channel, $event_script,
-                    $level );
+                $self->log( 3, "<Main:IRC> Running $event_type event for channel $from_channel: $event" );
+                $script->parse_Script( $from_nick, $from_channel, $event_script, $level );
             }
             else {
-                $self->log( 4,
-"<Main:IRC> Tried to run noexistent $event_type event for channel $from_channel: $event"
-                );
+                $self->log( 4, "<Main:IRC> Tried to run noexistent $event_type event for channel $from_channel: $event" );
             }
         }
     }
@@ -336,11 +329,7 @@ sub check_bannedChan {
 sub IRC_on_disconnect {
     my ( $irc, $event ) = @_;
     my $self = &main::get_Self;
-    $self->log( 1,
-            "<Main:IRC> Disconnected from "
-          . $event->from() . " ("
-          . ( $event->args() )[0]
-          . "). Attempting to reconnect..." );
+    $self->log( 1, "<Main:IRC> Disconnected from " . $event->from() . " (" . ( $event->args() )[0] . "). Attempting to reconnect..." );
     $irc->connect();
 }
 
@@ -375,27 +364,13 @@ sub IRC_on_invite {
     my $nick   = $event->{nick};
     my $mynick = $self->{config}->{irc_nickname};
     if ( !$self->check_bannedChan($chan) ) {
-        $self->log( 2,
-                "<Main:IRC> " 
-              . $nick
-              . " has invited me to join "
-              . $chan
-              . "!\n" );
+        $self->log( 2, "<Main:IRC> " . $nick . " has invited me to join " . $chan . "!\n" );
         $self->{_CHANNEL}->{$chan} = ninbot::channel->new( '_NAME' => $chan );
-        $self->{conn}
-          ->privmsg( $chan, "Hallo, ich bin " . $mynick . ", ein PerlBot!" );
-        $self->{conn}->privmsg( $chan,
-            $nick
-              . " hat mich eingeladen! Mit !part oder !ban bin ich wieder weg! Mit !hilfe gibts ne kleine Hilfe ;P"
-        );
+        $self->{conn}->privmsg( $chan, "Hallo, ich bin " . $mynick . ", ein PerlBot!" );
+        $self->{conn}->privmsg( $chan, $nick . " hat mich eingeladen! Mit !part oder !ban bin ich wieder weg! Mit !hilfe gibts ne kleine Hilfe ;P" );
     }
     else {
-        $self->log( 2,
-                "<Main:IRC> " 
-              . $nick
-              . " has invited me to banned channel "
-              . $chan
-              . "!\n" );
+        $self->log( 2, "<Main:IRC> " . $nick . " has invited me to banned channel " . $chan . "!\n" );
     }
 }
 
@@ -404,10 +379,7 @@ sub IRC_on_nick_in_use {
     my $self  = &main::get_Self;
     my $irc   = shift;
     my $event = shift;
-    $self->log( 1,
-            "<Main:IRC> Nickname "
-          . $self->{config}->{irc_nickname}
-          . " already in use.\n" );
+    $self->log( 1, "<Main:IRC> Nickname " . $self->{config}->{irc_nickname} . " already in use.\n" );
     my $nickname = $self->{config}->{irc_nickname};
     $nickname .= "_";
     $self->log( 1, "<Main:IRC> Trying with " . $nickname . "." );
@@ -427,8 +399,7 @@ sub IRC_on_join {
 
     #  print "IRC:\n".Dumper($irc)."\n\n";
     #  print "EVENT:\n".Dumper($event)."\n\n";
-    $self->log( 4,
-        "<Main:IRC> onJoin Event received from " . $event->{nick} . "." );
+    $self->log( 4, "<Main:IRC> onJoin Event received from " . $event->{nick} . "." );
 }
 
 # IRC Handler on part
@@ -442,8 +413,7 @@ sub IRC_on_part {
     else {
         $self->{_CHANNEL}->{ $event->{to}[0] }->del_name( $event->{nick} );
     }
-    $self->log( 4,
-        "<Main:IRC> onPart Event received from " . $event->{nick} . "." );
+    $self->log( 4, "<Main:IRC> onPart Event received from " . $event->{nick} . "." );
 }
 
 # IRC Handler on part
@@ -454,8 +424,7 @@ sub IRC_on_quit {
     foreach my $chan ( keys $self->{_CHANNEL} ) {
         $self->{_CHANNEL}->{$chan}->del_name( $event->{nick} );
     }
-    $self->log( 4,
-        "<Main:IRC> onQuit Event received from " . $event->{nick} . "." );
+    $self->log( 4, "<Main:IRC> onQuit Event received from " . $event->{nick} . "." );
 }
 
 # IRC Handler on nickchanges
@@ -469,8 +438,7 @@ sub IRC_on_nick_change {
     foreach my $chan ( keys $self->{_CHANNEL} ) {
         $self->{_CHANNEL}->{$chan}->change_name( $oldnick, $newnick );
     }
-    $self->log( 4,
-        "<Main:IRC> Nickchange Event received from $oldnick->$newnick." );
+    $self->log( 4, "<Main:IRC> Nickchange Event received from $oldnick->$newnick." );
 }
 
 # IRC Handler on names reply
@@ -533,11 +501,7 @@ sub IRC_on_public {
     elsif ( $message =~ m/^${trigger}op$/i ) {
         if ( $user->is_Active($from) ) {
             $conn->mode( $from_channel . " +o " . $from_nick );
-            $self->log( 3,
-                    "<Main:IRC:pub> Opping "
-                  . $from_nick
-                  . " on channel "
-                  . $from_channel );
+            $self->log( 3, "<Main:IRC:pub> Opping " . $from_nick . " on channel " . $from_channel );
         }
     }
     elsif ( $message =~ m/^${trigger}ban$/i ) {
@@ -546,37 +510,23 @@ sub IRC_on_public {
               )
             {
                 $self->{banlist}->{$from_channel} = 1;
-                $conn->privmsg( $from_channel,
-                        "OK, "
-                      . $from_nick
-                      . ", weg bin ich! Und ich komm auch nicht wieder! cu" );
+                $conn->privmsg( $from_channel, "OK, " . $from_nick . ", weg bin ich! Und ich komm auch nicht wieder! cu" );
                 $conn->part($from_channel);
-                $self->log( 2,
-                        "<Main:IRC:pub> Requested to ban "
-                      . $from_channel . " by "
-                      . $from_nick );
+                $self->log( 2, "<Main:IRC:pub> Requested to ban " . $from_channel . " by " . $from_nick );
             }
             else {
-                $conn->privmsg( $from_channel,
-                    $from_nick . ", ich geh nicht!" );
+                $conn->privmsg( $from_channel, $from_nick . ", ich geh nicht!" );
             }
         }
         else {
-            $self->log( 2,
-                    "<Main:IRC:pub> Requested to ban "
-                  . $from_channel
-                  . " but it is not in Channel list" );
+            $self->log( 2, "<Main:IRC:pub> Requested to ban " . $from_channel . " but it is not in Channel list" );
         }
     }
     elsif ( $message =~ m/^${trigger}part$/i ) {
         if ( !$self->{_CHANNEL}->{$from_channel}->is_PermChan($from_channel) ) {
-            $conn->privmsg( $from_channel,
-                "OK, " . $from_nick . ", weg bin ich! cu" );
+            $conn->privmsg( $from_channel, "OK, " . $from_nick . ", weg bin ich! cu" );
             $conn->part($from_channel);
-            $self->log( 2,
-                    "<Main:IRC:pub> Requested Parting from "
-                  . $from_channel . " by "
-                  . $from_nick );
+            $self->log( 2, "<Main:IRC:pub> Requested Parting from " . $from_channel . " by " . $from_nick );
         }
         else {
             $conn->privmsg( $from_channel, $from_nick . ", ich geh nicht!" );
@@ -588,29 +538,19 @@ sub IRC_on_public {
 
             #print Dumper($self);
             if ( !$self->check_bannedChan($join_chan) ) {
-                $self->log( 2,
-                        "<Main:IRC:pub> Requested Join Public Chan "
-                      . $join_chan
-                      . " from "
-                      . $from_nick . " on "
-                      . $from_channel );
-                $self->{_CHANNEL}->{$join_chan} =
-                  ninbot::channel->new( '_NAME' => $join_chan );
+                $self->log( 2, "<Main:IRC:pub> Requested Join Public Chan " . $join_chan . " from " . $from_nick . " on " . $from_channel );
+                $self->{_CHANNEL}->{$join_chan} = ninbot::channel->new( '_NAME' => $join_chan );
             }
             else {
-                $self->log( 2,
-                    "<Main:IRC:pub> Channel " . $join_chan . " is banned!" );
+                $self->log( 2, "<Main:IRC:pub> Channel " . $join_chan . " is banned!" );
             }
         }
     }
     elsif ( $message =~ m/^${trigger}mute$/i ) {
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
-            $self->log( 2,
-"<Main:IRC:pub> Request from $from_nick to be mute in $from_channel for 2 minutes!"
-            );
+            $self->log( 2, "<Main:IRC:pub> Request from $from_nick to be mute in $from_channel for 2 minutes!" );
             $self->{_CHANNEL}->{$from_channel}->mute();
-            $conn->privmsg( $from_channel,
-                "Ich bin hier nun 2 Minuten lautlos!" );
+            $conn->privmsg( $from_channel, "Ich bin hier nun 2 Minuten lautlos!" );
             my $unmute_script = sub {
                 my ( $conn, $chan ) = @_;
                 my $self = &main::get_Self;
@@ -622,8 +562,7 @@ sub IRC_on_public {
             $conn->schedule( 2 * 60, $unmute_script, $from_channel );
         }
         else {
-            $self->log( 3,
-                "<Main:IRC:pub> Dont progress !mute... im already muted!" );
+            $self->log( 3, "<Main:IRC:pub> Dont progress !mute... im already muted!" );
         }
     }
     elsif ( $message =~ m/^${trigger}timer\ (\d*)\ (.*)/i ) {
@@ -631,37 +570,17 @@ sub IRC_on_public {
         my $what         = $2;
         my $timer_script = sub {
             my ( $conn, $chan, $nick, $what ) = @_;
-            $conn->privmsg( $chan,
-                "Ey " . $nick . " dein " . $what . " ist fällig!!!" );
-            $conn->privmsg( $nick,
-                "Dein " . $what . " ist fällig!!! Nur das du's weisst!" );
+            $conn->privmsg( $chan, "Ey " . $nick . " dein " . $what . " ist fällig!!!" );
+            $conn->privmsg( $nick, "Dein " . $what . " ist fällig!!! Nur das du's weisst!" );
         };
-        $self->log( 3,
-                "<Main:IRC:pub> Timer "
-              . ( $zeit / 60 )
-              . " min ("
-              . $zeit
-              . " sec) "
-              . $what
-              . " from "
-              . $from_nick . " on "
-              . $from_channel
-              . "!" );
-        $conn->privmsg( $from_channel,
-                "OK, "
-              . $from_nick . ", "
-              . $what
-              . " ist in "
-              . ( $zeit / 60 )
-              . " Minute(n) fällig!" );
-        $conn->schedule( $zeit, $timer_script, $from_channel, $from_nick,
-            $what );
+        $self->log( 3, "<Main:IRC:pub> Timer " . ( $zeit / 60 ) . " min ($zeit sec) $what $from $from_nick on $from_channel!" );
+        $conn->privmsg( $from_channel, "OK, $from_nick, $what ist in ". ( $zeit / 60 ) . " Minute(n) fällig!" );
+        $conn->schedule( $zeit, $timer_script, $from_channel, $from_nick, $what );
     }
     elsif ( $message =~ m/^${trigger}eval\W+(.*)/i ) {
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
             $self->{_SCRIPT}->{command} = "eval";
-            $self->{_SCRIPT}
-              ->parse_Script( $from_nick, $from_channel, $1, $level );
+            $self->{_SCRIPT}->parse_Script( $from_nick, $from_channel, $1, $level );
         }
         else {
             $self->log( 3, "<Main:IRC:pub> Dont progress !eval... im muted!" );
@@ -677,9 +596,7 @@ sub IRC_on_public {
                 $command = $1;
                 $param   = $2;
             }
-            $self->log( 3,
-"<Main:IRC:pub> Searching Script for Command '$command' [$param]"
-            );
+            $self->log( 3, "<Main:IRC:pub> Searching Script for Command '$command' [$param]" );
             my @calc = $calc_self->get_Calc( "com-" . $command );
             if ( defined $calc[1] ) {
 
@@ -688,56 +605,40 @@ sub IRC_on_public {
                     $calc_name,    $calc_text, $calc_nick, $calc_date,
                     $calc_changed, $calc_mode, $calc_flag, $calc_level
                 ) = @calc;
-                $self->log( 4,
-                    "<Main:IRC:pub> Found Calc Command for '$command'" );
+                $self->log( 4, "<Main:IRC:pub> Found Calc Command for '$command'" );
                 if ( $calc_text =~ m/\{(.*)\}/i ) {
                     my $script = $1;
                     if ( $level >= $calc_level ) {
                         $self->{_SCRIPT}->{command} = $command;
-                        $self->{_SCRIPT}
-                          ->parse_Script( $from_nick, $from_channel, $script,
-                            $level, $param );
+                        $self->{_SCRIPT}->parse_Script( $from_nick, $from_channel, $script, $level, $param );
                     }
                     else {
-                        $self->log( 3,
-"<Main:IRC:pub> User $from_nick level ($level) is not high enough for that calc ($calc_level)!"
-                        );
+                        $self->log( 3, "<Main:IRC:pub> User $from_nick level ($level) is not high enough for that calc ($calc_level)!" );
                     }
                 }
                 elsif ( $calc_text =~ m/^handler\((.*?)\)$/i ) {
                     my $handler = $1;
-                    $self->log( 4,
-                            "<Main:IRC:pub> Entering Handler " 
-                          . $handler
-                          . " from Calc!" );
+                    $self->log( 4, "<Main:IRC:pub> Entering Handler $handler from Calc!" );
                     my $HDL = $self->{ "_" . uc($handler) };
                     $param = " " . $param if $param ne "";
-
-#		$HDL->Handler($from_nick, $from_channel, $self->{config}->{command_trigger}.$command.$param);
+					#$HDL->Handler($from_nick, $from_channel, $self->{config}->{command_trigger}.$command.$param);
                 }
                 elsif ( $calc_text =~ m/^\!\!(.*)/i ) {
                     my $link = $1;
-                    $self->log( 4,
-"<Main:IRC:pub> Symbolic link entry from Calc $calc_name to $link"
-                    );
+                    $self->log( 4, "<Main:IRC:pub> Symbolic link entry from Calc $calc_name to $link" );
                     $self->{_SCRIPT}->{command} = $command;
                     if ( $link =~ m/^com-/i ) {
                         my @link_calc = $calc_self->get_Calc($link);
-                        my ( $link_name, $link_script, undef, undef, undef,
-                            undef, undef, undef )
-                          = @link_calc;
+                        my ( $link_name, $link_script, undef, undef, undef, undef, undef, undef ) = @link_calc;
                         if ( $link_script =~ m/\{(.*)\}/i ) {
                             my $link_script = $1;
                             if ( $level >= $link_calc[7] ) {
-                                $self->{_SCRIPT}
-                                  ->parse_Script( $from_nick, $from_channel,
-                                    $link_script, $level, $param );
+                                $self->{_SCRIPT}->parse_Script( $from_nick, $from_channel, $link_script, $level, $param );
                             }
                         }
                     }
                     else {
-                        $calc_self->Handler( $from, $from_nick, $from_channel,
-                            "data " . $link );
+                        $calc_self->Handler( $from, $from_nick, $from_channel, "data " . $link );
                     }
                 }
                 else {
@@ -746,12 +647,10 @@ sub IRC_on_public {
             }
         }
         else {
-            $self->log( 3,
-                "<Main:IRC:pub> Dont progress !command... im muted!" );
+            $self->log( 3, "<Main:IRC:pub> Dont progress !command... im muted!" );
         }
     }
     else {
-
         # normal messages
     }
 }
@@ -778,8 +677,7 @@ sub IRC_on_private {
     else {
         if ( $command =~ m/^join\ (.*)/i ) {
             if ( $level >= 4 ) {
-                $self->log( 3,
-                    "<Main:IRC:priv> PrivCmd Join $1 from $from_nick" );
+                $self->log( 3, "<Main:IRC:priv> PrivCmd Join $1 from $from_nick" );
                 $self->{_CHANNEL}->{$1} = ninbot::channel->new( '_NAME' => $1 );
             }
             else {
@@ -790,8 +688,7 @@ sub IRC_on_private {
             }
         }
         elsif ( $command =~ m/^part\ (.*)/i ) {
-            $self->log( 3,
-                "<Main:IRC:priv> PrivCmd Parting $1 from $from_nick" );
+            $self->log( 3, "<Main:IRC:priv> PrivCmd Parting $1 from $from_nick" );
             $irc->part($1) if !$self->{_CHANNEL}->is_PermChan($1);
         }
         elsif ( $command =~ m/^adduser (.*?) (\d*)/i ) {
@@ -799,31 +696,24 @@ sub IRC_on_private {
             my $add_host = $user->get_Host($add_nick) || "nix";
             my $add_flag = $2;
             if ( $user->check_User($from) >= 10 ) {
-                $self->log( 2,
-"<Main:IRC:priv> Adding User $add_nick ($add_host) with level $add_flag by $from_nick"
-                );
+                $self->log( 2, "<Main:IRC:priv> Adding User $add_nick ($add_host) with level $add_flag by $from_nick" );
             }
         }
         elsif ( $command =~ m/^id\ (.*)/i ) {
             $self->log( 3, "<Main:IRC:priv> Id from $from_nick" );
             if ( !$user->is_Active($from) ) {
                 if ( $user->active_User( $from, $1 ) ) {
-                    $self->log( 3,
-"<Main:IRC:priv> User $from_nick was succesfully identified!"
-                    );
-                    $irc->privmsg( $from_nick,
-                        "Du bist erfolgreich identifiziert worden!" );
+                    $self->log( 3, "<Main:IRC:priv> User $from_nick was succesfully identified!" );
+                    $irc->privmsg( $from_nick, "Du bist erfolgreich identifiziert worden!" );
                 }
                 else {
-                    $self->log( 3,
-                        "<Main:IRC:priv> User $from_nick failed id!" );
+                    $self->log( 3, "<Main:IRC:priv> User $from_nick failed id!" );
                 }
             }
             else {
                 $self->log( 3,
                     "<Main:IRC:priv> User $from_nick already identified!" );
-                $irc->privmsg( $from_nick,
-                    "Du bist schon erfolgreich identifiziert worden!" );
+                $irc->privmsg( $from_nick, "Du bist schon erfolgreich identifiziert worden!" );
             }
         }
 
@@ -844,20 +734,16 @@ sub IRC_on_private {
                     { "handle", $from_nick, "password", $password } )
                   ; #prepare("UPDATE user SET password='$password' WHERE handle = '$from_nick'");
                 $sth->execute;
-                $self->log( 3,
-                    "<Main:IRC:priv> Setting password for $from_nick" );
+                $self->log( 3, "<Main:IRC:priv> Setting password for $from_nick" );
             }
             else {
-                $self->log( 3,
-                    "<Main:IRC:priv> Denied Password Set for $from_nick" );
+                $self->log( 3, "<Main:IRC:priv> Denied Password Set for $from_nick" );
             }
         }
         elsif ( $command =~ m/^kill\s+((.*))?/i ) {
             my $kill_msg = $1;
             if ( $user->check_User($from) >= 10 ) {
-                $self->log( 3,
-                    "<Main:IRC:priv> Kill requested by $from_nick ($kill_msg)"
-                );
+                $self->log( 3, "<Main:IRC:priv> Kill requested by $from_nick ($kill_msg)" );
                 $self->{conn}->quit("Kill requested by $from_nick ($kill_msg)")
                   if defined $kill_msg;
                 $self->{conn}->quit("Kill requested by $from_nick")
@@ -869,41 +755,31 @@ sub IRC_on_private {
         elsif ( $command =~ m/^nick\ (.*)/i ) {
             my $new_nick = $1;
             if ( $user->check_User($from) >= 5 ) {
-                $self->log( 3,
-"<Main:IRC:priv> Nickchange to $new_nick requested by $from_nick"
-                );
+                $self->log( 3, "<Main:IRC:priv> Nickchange to $new_nick requested by $from_nick" );
                 $self->{conn}->sl( "NICK " . $new_nick );
 
             }
         }
         elsif ( $command =~ m/^save/i ) {
-            $self->log( 3,
-                "<Main:IRC:priv> Saving Configuration from $from_nick" );
+            $self->log( 3, "<Main:IRC:priv> Saving Configuration from $from_nick" );
             $self->save_Config;
         }
         elsif ( $command =~ m/^load/i ) {
-            $self->log( 3,
-                "<Main:IRC:priv> Loading Configuration from $from_nick" );
+            $self->log( 3, "<Main:IRC:priv> Loading Configuration from $from_nick" );
             $self->read_Config;
         }
         elsif ( $command =~ m/^unban\ (.*)/i ) {
             $self->log( 3, "<Main:IRC:priv> Unbanning $1 by $from_nick" );
             if ( $user->check_User($from) >= 5 ) {
                 delete $self->{banlist}->{$1};
-                $self->{conn}
-                  ->privmsg( $from_nick, "OK, $1 ist nun nichtmehr gebannt!" );
+                $self->{conn}->privmsg( $from_nick, "OK, $1 ist nun nichtmehr gebannt!" );
             }
             else {
-                $self->{conn}->privmsg( $from_nick,
-                    "Tut mir leid! Aber du darfst das nicht!" );
+                $self->{conn}->privmsg( $from_nick, "Tut mir leid! Aber du darfst das nicht!" );
             }
         }
         else {
-            $self->log( 2,
-                    "<Main:IRC:priv> Message from "
-                  . $from_nick . " -> "
-                  . $command
-                  . "!" );
+            $self->log( 2, "<Main:IRC:priv> Message from $from_nick -> $command!" );
         }
     }
 }
@@ -917,10 +793,7 @@ sub IRC_on_ctcp_version {
     undef $msg_hash;
     my $from_nick = $msg_hash{nick};
     $self->log( 3, "<Main:IRC> CTCP VERSION from " . $from_nick );
-    $self->{conn}->notice( $from_nick,
-            "VERSION ninbot v"
-          . $self->{_VERSION}
-          . " (c) ninharp <ninharp\@gmx.net>" );
+    $self->{conn}->notice( $from_nick, "VERSION ninbot v" . $self->{_VERSION} . " (c) ninharp <ninharp\@gmx.net>" );
 }
 
 # IRC Handler on kick
@@ -938,8 +811,7 @@ sub IRC_on_kick {
         if ( $user eq $self->{config}->{irc_nickname} ) {
             $self->log( 1, "<Main:IRC> I was kicked from " . $from_channel );
             $self->{conn}->join($from_channel);
-            $self->{conn}->privmsg( $from_channel,
-                "Das nächste mal gehts auch freundlicher! *beleidigtsei*" );
+            $self->{conn}->privmsg( $from_channel, "Das nächste mal gehts auch freundlicher! *beleidigtsei*" );
             $self->{conn}->part($from_channel);
         }
     }
