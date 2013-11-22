@@ -1,0 +1,25 @@
+develop_script   	lines.sh
+channel_file   		ninbot.channels
+irc_botmode   		1
+irc_server   		irc.hes.de.euirc.net
+irc_port   			6667
+irc_ident   		ninbot
+irc_nickname   		ninbot
+irc_email   		owner of ninbot
+<server>
+    1   irc.hes.de.euirc.net
+</server>
+calc_file   		data/calc.db
+banlist_file   		data/bans.db
+pid_file   			ninbot.pid
+log_file   			ninbot.log
+debug   			2
+daemon   			0
+sql_user   			root
+sql_password   		password
+sql_dsn   			dbi:mysql:ninbot:localhost:3306
+command_trigger   	!
+save_interval   	900
+calc_backend   		mySQL
+
+
