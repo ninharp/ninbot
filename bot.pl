@@ -94,7 +94,12 @@ $bot->log( 0, "<Bot> Set Debuglevel to " . chop( $config{debug} ) )
   if defined $config{debug};
 $bot->log( 0, "<Bot> Setting up IRC Connection..\n" );
 $bot->setup_IRC();
+<<<<<<< HEAD
 $bot->log( 0, "<Bot> - Using IRC Nickname:\t\t" . $config{irc_nickname} );
+=======
+$bot->log( 0,
+    "<Bot> - Using IRC Nickname:\t\t" . $config{irc_nickname} );
+>>>>>>> 388e56e510ab24e956feae1ad86679901bdde7f8
 $bot->log( 0, "<Bot> - Using IRC Server:\t\t" . $config{irc_server} );
 my %server = %{ $config{server} };
 
