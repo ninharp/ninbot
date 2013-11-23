@@ -37,7 +37,7 @@ sub new {
     my $self  = {@_};
     bless( $self, $class );
     $self->{_DEBUG}    = 2;
-    $self->{_VERSION}  = "0.83.19";
+    $self->{_VERSION}  = `cat VERSION`;
     $self->{_CONFIG}   = "ninbot.conf";
     $self->{_SERVER}   = ();
     $self->{_CURSER}   = 0;
