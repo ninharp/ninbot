@@ -23,8 +23,7 @@ sub new {
     bless( $self, $class );
     $self->{_BOT} = &main::get_Self;
     $self->{_DBH} =
-      $self->{_BOT}
-      ->{_DBH}; # allgemeiner dbh hier rein für allgmeeine funcs für text und sql
+      $self->{_BOT}->{_DBH}; # allgemeiner dbh hier rein für allgmeeine funcs für text und sql
     $self->{_BOT}->log( 3, "<Calc> Initialized..." );
     return $self;
 }
@@ -258,22 +257,12 @@ sub Handler {
                 @calc = $calc_self->rand_Calc;
             }
             my ( $name, $text, $author, $date, undef, undef, undef ) = @calc;
-            $conn->privmsg( $from_channel,
-                    "* " 
-                  . $name . " = " 
-                  . $text . " [" 
-                  . $author . ", " 
-                  . $date . ", "
-                  . $calc[6] . "/"
-                  . $calc[7]
-                  . "]" );
+            $conn->privmsg( $from_channel, "* " . $name . " = " . $text . " [" . $author . ", " . $date . ", " . $calc[6] . "/" . $calc[7] . "]" );
         }
         else {
-            $conn->privmsg( $from_channel,
-                "* Sorry but the database is still empty ;(" );
+            $conn->privmsg( $from_channel, "* Sorry but the database is still empty ;(" );
         }
-        $self->log( 3,
-            "<Calc> Random entry from $from_nick($level) on $from_channel!" );
+        $self->log( 3, "<Calc> Random entry from $from_nick($level) on $from_channel!" );
     }
 
     # Set Calc
@@ -282,14 +271,12 @@ sub Handler {
         my $calc_text = $2;
         my $calc = $calc_self->add_Calc( $calc_name, $from_nick, 0, "rw", $calc_text );
         if ( $calc <= 0 ) {
-            $conn->privmsg( $from_channel,
-                "Schon ein Calc fuer '$calc_name' in der Datenbank!" );
+            $conn->privmsg( $from_channel, "Schon ein Calc fuer '$calc_name' in der Datenbank!" );
         }
         else {
             $conn->privmsg( $from_channel, "Calc '$calc_name' hinzugefuegt!" );
         }
-        $self->log( 3,
-"<Calc> Add entry $calc_name from $from_nick($level) on $from_channel!"
+        $self->log( 3, "<Calc> Add entry $calc_name from $from_nick($level) on $from_channel!"
         );
     }
 
@@ -302,9 +289,7 @@ sub Handler {
                 $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name'" );
             }
             else {
-                if (   $calc[6] =~ m/r/i
-                    or $calc[2] eq $from_nick and $level >= $calc[7] )
-                {
+                if (   $calc[6] =~ m/r/i or $calc[2] eq $from_nick and $level >= $calc[7] ) {
                     if ( length( $calc[1] ) >= 395 ) {
                         my $new_calc = substr( $calc[1], 0, 395 ) . "...";
                         $conn->privmsg( $from_channel,
@@ -322,8 +307,7 @@ sub Handler {
                         "Calc '$calc_name' ist privat!" );
                 }
             }
-            $self->log( 3,
-				"<Calc> Requesting entry $calc_name from $from_nick($level) on $from_channel!"
+            $self->log( 3, "<Calc> Requesting entry $calc_name from $from_nick($level) on $from_channel!"
             );
         }
     }
@@ -396,8 +380,7 @@ sub Handler {
                     "Calc '$calc_name' ist schreibgeschützt!" );
             }
         }
-        $self->log( 3, "<Calc> Remove entry $calc_name from $from_nick($level) on $from_channel!"
-        );
+        $self->log( 3, "<Calc> Remove entry $calc_name from $from_nick($level) on $from_channel!" );
     }
 
     # Calc Flag
@@ -416,28 +399,22 @@ sub Handler {
             {
                 if ( my $ret = $calc_self->set_Flag( $calc_name, $calc_flag ) )
                 {
-                    $conn->privmsg( $from_channel,
-"Calc Flags für '$calc_name' sind nun auf $calc_flag gesetzt!"
+                    $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' sind nun auf $calc_flag gesetzt!"
                     );
                 }
                 elsif ( $ret == -1 ) {
-                    $conn->privmsg( $from_channel,
-                        "Calc Flags für '$calc_name' sind nicht korrekt!" );
+                    $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' sind nicht korrekt!" );
                 }
                 else {
-                    $conn->privmsg( $from_channel,
-"Calc Flags für '$calc_name' konnten nicht gesetzt werden!"
+                    $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' konnten nicht gesetzt werden!"
                     );
                 }
             }
             else {
-                $conn->privmsg( $from_channel,
-                    "Calc '$calc_name' ist schreibgeschützt!" );
+                $conn->privmsg( $from_channel, "Calc '$calc_name' ist schreibgeschützt!" );
             }
         }
-        $self->log( 3,
-"<Calc> Set flags for entry $calc_name from $from_nick($level) on $from_channel!"
-        );
+        $self->log( 3, "<Calc> Set flags for entry $calc_name from $from_nick($level) on $from_channel!" );
     }
 
     # Calc Level
@@ -458,38 +435,26 @@ sub Handler {
                     if ( my $ret =
                         $calc_self->set_Level( $calc_name, $calc_level ) )
                     {
-                        $conn->privmsg( $from_channel,
-"Calc Level für '$calc_name' ist nun auf $calc_level gesetzt!"
-                        );
+                        $conn->privmsg( $from_channel, "Calc Level für '$calc_name' ist nun auf $calc_level gesetzt!" );
                     }
                     elsif ( $ret == -1 ) {
-                        $conn->privmsg( $from_channel,
-                            "Calc Level für '$calc_name' ist nicht korrekt!" );
+                        $conn->privmsg( $from_channel, "Calc Level für '$calc_name' ist nicht korrekt!" );
                     }
                     else {
-                        $conn->privmsg( $from_channel,
-"Calc Level für '$calc_name' konnten nicht gesetzt werden!"
-                        );
+                        $conn->privmsg( $from_channel, "Calc Level für '$calc_name' konnten nicht gesetzt werden!" );
                     }
                 }
                 else {
-                    $conn->privmsg( $from_channel,
-"Calc Level $calc_level für '$calc_name' überschreitet dein eigenes Userlevel ($level)!"
-                    );
+                    $conn->privmsg( $from_channel, "Calc Level $calc_level für '$calc_name' überschreitet dein eigenes Userlevel ($level)!" );
                 }
             }
             else {
-                $conn->privmsg( $from_channel,
-                    "Calc '$calc_name' ist schreibgeschützt!" );
+                $conn->privmsg( $from_channel, "Calc '$calc_name' ist schreibgeschützt!" );
             }
         }
-        $self->log( 3,
-"<Calc> Set level for entry $calc_name from $from_nick($level) on $from_channel!"
-        );
+        $self->log( 3, "<Calc> Set level for entry $calc_name from $from_nick($level) on $from_channel!" );
     }
-    elsif ($message =~ m/^${trigger}(?:index|list)\W?(\d*)/i
-        or $message =~ m/^${trigger}list\W?(\d*)/i )
-    {
+    elsif ($message =~ m/^${trigger}(?:index|list)\W?(\d*)/i or $message =~ m/^${trigger}list\W?(\d*)/i ) {
         my @com_list = $calc_self->list_Com;
         my $cur_page = $1 || 1;
         my $max_page = int( scalar(@com_list) / 20 );
@@ -505,16 +470,8 @@ sub Handler {
             $commands .= ", "
               if ( $i + 1 ) < $end_com and defined $com_list[ $i + 1 ];
         }
-        $conn->privmsg( $from_channel,
-                $from_nick
-              . ": Auf Seite "
-              . $cur_page . "/"
-              . $max_page
-              . " gibt es folgende Befehle: "
-              . $commands );
-        $self->log( 3,
-"<Calc> Requesting trigger index page $cur_page from $from_nick($level) on $from_channel!"
-        );
+        $conn->privmsg( $from_channel, $from_nick . ": Auf Seite " . $cur_page . "/" . $max_page . " gibt es folgende Befehle: " . $commands );
+        $self->log( 3, "<Calc> Requesting trigger index page $cur_page from $from_nick($level) on $from_channel!" );
     }
     elsif ( $message =~ m/^match\ (.*)$/i ) {
         my $match_string = $1;
@@ -526,33 +483,16 @@ sub Handler {
                     $calc_names .= $calcs[$i];
                     $calc_names .= ", " if defined $calcs[ $i + 1 ];
                 }
-                $conn->privmsg( $from_channel,
-                        $from_nick
-                      . ": Ich habe "
-                      . scalar(@calcs)
-                      . " Treffer: "
-                      . $calc_names );
+                $conn->privmsg( $from_channel, $from_nick . ": Ich habe " . scalar(@calcs) . " Treffer: " . $calc_names );
             }
             else {
-                $conn->privmsg( $from_channel,
-                        $from_nick
-                      . ": mehr als 20 Treffer ("
-                      . scalar(@calcs)
-                      . ") für '"
-                      . $match_string
-                      . "'! Bitte Suche einschränken!" );
+                $conn->privmsg( $from_channel, $from_nick . ": mehr als 20 Treffer (" . scalar(@calcs) . ") für '" . $match_string . "'! Bitte Suche einschränken!" );
             }
         }
         else {
-            $conn->privmsg( $from_channel,
-                    $from_nick
-                  . ": Leider keine Treffer für '"
-                  . $match_string
-                  . "'..." );
+            $conn->privmsg( $from_channel, $from_nick . ": Leider keine Treffer für '" . $match_string . "'..." );
         }
-        $self->log( 3,
-"<Calc> Match entry by '$match_string' from $from_nick($level) on $from_channel!"
-        );
+        $self->log( 3, "<Calc> Match entry by '$match_string' from $from_nick($level) on $from_channel!" );
     }
 }
 
