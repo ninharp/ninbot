@@ -100,7 +100,7 @@ sub add_Calc {
     my $self      = &main::get_Self;
     my $ret       = 1;
     my $dbh       = $calc_self->{_DBH};
-    my ( $name, $author, $text ) = @_;
+    my ( $name, $author, $calc_level, $calc_flag, $text ) = @_;
     $name =~ s/\'/\\\'/gi;
     $text =~ s/\'/\\\'/gi;
     $self->log( 3, "<Calc> Added a new calc '" . $name . "'" );
@@ -113,10 +113,10 @@ sub add_Calc {
         $ret = 0;
     }
     else {
-        my $flag    = "rw";
+        my $flag    = $calc_flag;
         my $mode    = 0;
         my $changed = "";
-        my $level   = 0;
+        my $level   = $calc_level;
         my @add =
           ( $name, $text, $author, $date, $changed, $mode, $flag, $level );
         $ret = $dbh->add( "calc", @add );
@@ -280,7 +280,7 @@ sub Handler {
     elsif ( $message =~ m/^data\ (.*?)\W*=\W?(.*)$/i ) {
         my $calc_name = $1;
         my $calc_text = $2;
-        my $calc = $calc_self->add_Calc( $calc_name, $from_nick, $calc_text );
+        my $calc = $calc_self->add_Calc( $calc_name, $from_nick, 0, "rw", $calc_text );
         if ( $calc <= 0 ) {
             $conn->privmsg( $from_channel,
                 "Schon ein Calc fuer '$calc_name' in der Datenbank!" );
@@ -293,7 +293,7 @@ sub Handler {
         );
     }
 
-    # Calc
+    # Get Calc
     elsif ( $message =~ m/^data\ (.*)$/i ) {
         my $calc_name = $1;
         if ( $calc_name !~ m/^\W*$/i ) {
@@ -308,12 +308,12 @@ sub Handler {
                     if ( length( $calc[1] ) >= 395 ) {
                         my $new_calc = substr( $calc[1], 0, 395 ) . "...";
                         $conn->privmsg( $from_channel,
-"* $calc[0] = $new_calc [$calc[2], $calc[3], $calc[6]/$calc[7]]"
+							"* $calc[0] = $new_calc [$calc[2], $calc[3], $calc[6]/$calc[7]]"
                         );
                     }
                     else {
                         $conn->privmsg( $from_channel,
-"* $calc[0] = $calc[1] [$calc[2], $calc[3], $calc[6]/$calc[7]]"
+							"* $calc[0] = $calc[1] [$calc[2], $calc[3], $calc[6]/$calc[7]]"
                         );
                     }
                 }
@@ -323,7 +323,7 @@ sub Handler {
                 }
             }
             $self->log( 3,
-"<Calc> Requesting entry $calc_name from $from_nick($level) on $from_channel!"
+				"<Calc> Requesting entry $calc_name from $from_nick($level) on $from_channel!"
             );
         }
     }
@@ -335,16 +335,42 @@ sub Handler {
         my $num = $calc_self->plus_Calc( $calc_name, $from_nick, $calc_text );
         if ( $num >= 0 ) {
             $calc_name .= $num if $num != 0;
-            $conn->privmsg( $from_channel,
-                "Calc '" . $calc_name . "' hinzugefuegt!" );
+            $conn->privmsg( $from_channel, "Calc '" . $calc_name . "' hinzugefuegt!" );
         }
         else {
-            $conn->privmsg( $from_channel,
-                "Calc '" . $calc_name . "' erzeugte einen Fehler!" );
+            $conn->privmsg( $from_channel, "Calc '" . $calc_name . "' erzeugte einen Fehler!" );
         }
-        $self->log( 3,
-"<Calc> Increment Add entry $calc_name from $from_nick($level) on $from_channel!"
+        $self->log( 3, "<Calc> Increment Add entry $calc_name from $from_nick($level) on $from_channel!"
         );
+    }
+    
+    # Modify Calc
+    elsif ( $message =~ m/^data\*\ (.*)\W+=\W?(.*)$/i ) {
+        my $calc_name = $1;
+        my $calc_text = $2;
+        my @acc_calc = $calc_self->get_Calc($calc_name);
+        if ( !defined $acc_calc[1] ) {
+            $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name' in der Datenbank!" );
+        }
+        else {
+            my ( $author, undef ) = split( /,/, $acc_calc[2] );
+            if ( $acc_calc[6] =~ m/w/i or $author eq $from_nick and $level >= $acc_calc[7] ) {
+				$calc_self->del_Calc($calc_name);
+				my $calc = $calc_self->add_Calc( $calc_name, $from_nick, $acc_calc[7], $acc_calc[6], $calc_text );
+				if ( $calc <= 0 ) {
+					$conn->privmsg( $from_channel, "Fehler beim überschreiben von '$calc_name'!" );
+				}
+				else {
+					#my $calc = $calc_self->mod_Calc( $calc_name, $from_nick, $calc_text );
+					$conn->privmsg( $from_channel, "Calc '" . $calc_name . "' geändert!" );
+					$self->log( 3, "<Calc> Modify entry $calc_name from $from_nick($level) on $from_channel!" );
+				}
+            }
+            else {
+                $conn->privmsg( $from_channel, "Calc '$calc_name' ist schreibgeschützt oder du hast nicht die nötigen Rechte!" );
+                $self->log( 3, "<Calc> Modify entry $calc_name from $from_nick($level) on $from_channel failed of rights!" );
+            }
+        }
     }
 
     # Remove Calc
@@ -370,8 +396,7 @@ sub Handler {
                     "Calc '$calc_name' ist schreibgeschützt!" );
             }
         }
-        $self->log( 3,
-"<Calc> Remove entry $calc_name from $from_nick($level) on $from_channel!"
+        $self->log( 3, "<Calc> Remove entry $calc_name from $from_nick($level) on $from_channel!"
         );
     }
 

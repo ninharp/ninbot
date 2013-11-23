@@ -79,8 +79,7 @@ sub check_User {    # ( _SELF_, String $from )
         if ( $tmp_user->chk_hostmask($host) ) {
             $ret = $tmp_user->is_identifyed();
             if ( $ret == 0 ) {
-                $self->log( 3,
-"<Users> Error: $nick [$host] (Host found but not identified)!"
+                $self->log( 3, "<Users> Error: $nick [$host] (Host found but not identified)!"
                 );
             }
         }
@@ -95,7 +94,7 @@ sub check_Level {    # ( _SELF_, String $from )
     my $self = &main::get_Self;
     my $ret  = 0;
     my ( $users, $from ) = @_;
-    $self->log( 5, "Users Module: check_Level($from)" );
+    $self->log( 5, "<Users> check_Level($from)" );
     my ( $from_user, $host )  = split( /\@/, $from );
     my ( $nick,      $ident ) = split( /\!/, $from_user );
     foreach my $tmp_user (@$users) {
@@ -103,12 +102,7 @@ sub check_Level {    # ( _SELF_, String $from )
             $ret = $tmp_user->get_flags();
         }
     }
-    $self->log( 6,
-            "<Users> check_level = Check Level " 
-          . $nick
-          . " with host "
-          . $host . " = "
-          . $ret );
+    $self->log( 6, "<Users> check_level = Check Level " . $nick . " with host " . $host . " = " . $ret );
     return $ret;
 }
 

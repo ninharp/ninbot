@@ -201,11 +201,9 @@ sub del {
     my @fields    = @{ $backend->{$fieldname} };
     my $field     = $fields[$column];
 	$backend->check_dbi();
-    my $sth =
-      $backend->{_DBH}->prepare("DELETE FROM $database WHERE $field = '$name'");
+    my $sth = $backend->{_DBH}->prepare("DELETE FROM $database WHERE $field = '$name'");
     $ret = $sth->execute;
-    $self->log( 4, "<mySQL> [$database] del = Deleted successfully!" )
-      if ( $ret != 0 );
+    $self->log( 4, "<mySQL> [$database] del = Deleted successfully!" ) if ( $ret != 0 );
 }
 
 # update($1, @2)

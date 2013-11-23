@@ -493,7 +493,7 @@ sub IRC_on_public {
     my $level        = $user->check_Level($from);
     my $trigger      = $self->{config}->{command_trigger};
     my $conn         = $self->{conn};
-
+    
     #  if ($message =~ m/^(calc|match|${trigger}index|${trigger}list)/i) {
     if ( $message =~ m/^(data|match|${trigger}index|${trigger}list)/i ) {
         $calc_self->Handler( $from, $from_nick, $from_channel, $message );
