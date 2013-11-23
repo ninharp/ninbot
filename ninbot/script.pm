@@ -208,7 +208,7 @@ sub _replace_Vars {
 
     # Replaces some simple values
     $com =~ s/\&nick/$nick/ig;
-    $com =~ s/\&VERSION/$bot->{_VERSION}/ig;
+    $com =~ s/\&version/$bot->{_VERSION}/ig;
     $com =~ s/\&chan/$chan/ig;
     $com =~ s/\&backend/$backend/ig;
     $com =~ s/\&userlevel/$level/ig;
