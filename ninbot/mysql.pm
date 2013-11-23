@@ -46,10 +46,21 @@ sub DESTROY {
     $backend->{_BOT}->log( 3, "<mySQL> Successfully closed!..." );
 }
 
+sub check_dbi {
+	my $backend = shift;
+	my $self = $backend->{_BOT};
+	$backend->{_DBH} ||= DBI->connect(
+        $self->{_BOT}->{config}->{sql_dsn},
+        $self->{_BOT}->{config}->{sql_user},
+        $self->{_BOT}->{config}->{sql_password}
+      );
+}
+
 # Get fields for the tables
 sub _get_fields {
     my $backend = shift;
     my @fields;
+    $backend->check_dbi();
     my $sth = $backend->{_DBH}->prepare("SHOW COLUMNS FROM user");
     $sth->execute;
     while ( my @row = $sth->fetchrow_array() ) {
@@ -103,6 +114,8 @@ sub add {
         my $sql_values = join( ", ", @values );
         my $sql_fields = join( ", ", @fields );
 
+		$backend->check_dbi();
+		
         my $sth =
           $backend->{_DBH}
           ->prepare("INSERT INTO $database($sql_fields) VALUES($sql_values)");
@@ -142,6 +155,7 @@ sub match {
         my $field     = $fields[$column];
         $like =~ s/\'/\\\'/gi;
         $like =~ s/\´/\\\´/gi;
+        $backend->check_dbi();
         my $sth =
           $backend->{_DBH}
           ->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
@@ -186,6 +200,7 @@ sub del {
     my $fieldname = "_fields_" . $database;
     my @fields    = @{ $backend->{$fieldname} };
     my $field     = $fields[$column];
+	$backend->check_dbi();
     my $sth =
       $backend->{_DBH}->prepare("DELETE FROM $database WHERE $field = '$name'");
     $ret = $sth->execute;
@@ -210,6 +225,7 @@ sub update {
         $up_fields .= ", " if $i != scalar(@fields) - 1;
     }
     $self->log( 4, "<mySQL> [$database] update($database, '@data')" );
+    $backend->check_dbi();
     my $sth =
       $backend->{_DBH}->prepare(
         "UPDATE $database SET $up_fields WHERE $index_field='$data[0]'");
@@ -237,9 +253,9 @@ sub select {
         my $field     = $fields[$column];
         $like =~ s/\'/\\\'/gi;
         $like =~ s/\´/\\\´/gi;
+        $backend->check_dbi();
         my $sth =
-          $backend->{_DBH}
-          ->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
+          $backend->{_DBH}->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
         if ( $sth->execute ) {
             @ret = $sth->fetchrow_array();
             $self->log( 4, "<mySQL> [$database] select = Found entry!" )
