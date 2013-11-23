@@ -627,6 +627,7 @@ sub IRC_on_public {
                     my $link = $1;
                     $self->log( 4, "<Main:IRC:pub> Symbolic link entry from Calc $calc_name to $link" );
                     $self->{_SCRIPT}->{command} = $command;
+                    $link = "com-".$link if ($link !~ m/^com-/i);
                     if ( $link =~ m/^com-/i ) {
                         my @link_calc = $calc_self->get_Calc($link);
                         my ( $link_name, $link_script, undef, undef, undef, undef, undef, undef ) = @link_calc;
