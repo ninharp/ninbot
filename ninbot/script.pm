@@ -769,8 +769,8 @@ sub set {
         }
         else {
 
-            #      $set_name = $script_self->_replace_Vars($set_name);
-            $set_name .= "data-var-";
+            $set_value = $script_self->_replace_Vars($set_value);
+            $set_name = "data-var-".$set_name;
             $set_name  =~ s/^"(.*)"$/$1/;
             $set_value =~ s/^"(.*)"$/$1/;
             my @set_calc   = $calc->get_Calc($set_name);
