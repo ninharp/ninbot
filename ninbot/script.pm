@@ -614,9 +614,9 @@ sub if {
 # while schleife commands bis nen else falls nen else drinne iss und mit den {} mal gucken vielleicht weglassen iss besser wegen allg {}
 # mal schauen
 #  if ($do_this =~ m/^(\")?.*?(\")?\W?((=)?=|eq|ne|\!=)\W?then\ \w+$/) {
-    if ( $do_this =~ m/^\s*(.*?)\s*((?:=|eq|\!=|ne))\s*(.*?)\s+then\s+\{?(.*?)\}?\s*else\s+\{?(.*)\}??$/i ) {
-        my ( $if_first, $if_operator, $if_second, $if_script, $if_else ) = ( $1, $2, $3, $4, $5 );
-        $self->log( 4, "<Script> IF: Correct Syntax <$do_this>" );
+    if ( $do_this =~ m/^\s*(.*?)\s*((?:=|eq|\!=|ne))\s*(.*?)\s+then\s+\{?(.*?)\}?\s*(else\s+\{?(.*)\}?)?$/i ) {
+        my ( $if_first, $if_operator, $if_second, $if_script, $if_else ) = ( $1, $2, $3, $4, $6 );
+        $self->log( 4, "<Script> IF: Correct Syntax <$do_this> $if_first $if_operator $if_second = $if_script else $if_else" );
         my @if_script_cmds = split( /\:,/, $if_script );
         my @if_else_cmds   = split( /\:,/, $if_else );
         $if_script = join( ";", @if_script_cmds );
@@ -624,15 +624,14 @@ sub if {
         $if_else = join( ";", @if_else_cmds );
         undef @if_else_cmds;
         $if_script =~ s/^\s*(.*)\s*$/$1/;
-        $self->log( 5,
-            "IF: <$if_first> $if_operator <$if_second> then <$if_script>" );
+        $self->log( 5, "IF: <$if_first> $if_operator <$if_second> then <$if_script>" );
         $if_first  = $script_self->_replace_Vars($if_first);
         $if_second = $script_self->_replace_Vars($if_second);
         $if_first  =~ s/^"(.*)"$/$1/;
         $if_second =~ s/^"(.*)"$/$1/;
 
         if ( $if_operator =~ m/^(?:=|eq)$/i ) {
-            $self->log( 5, "<Script> IF: <$if_first> equals <$if_second> then do <$if_script>");
+            $self->log( 5, "<Script> IF: <$if_first> equals <$if_second> then do <$if_script>" );
             if ( $if_first eq $if_second ) {
                 $self->log( 4, "<Script> IF: It is equal! Starting Script!" );
                 $script_self->_parse($if_script);
@@ -645,9 +644,7 @@ sub if {
             }
         }
         elsif ( $if_operator =~ m/^(?:\!=|ne)$/i ) {
-            $self->log( 5,
-"<Script> IF: <$if_first> not equals <$if_second> then do <$if_script>"
-            );
+            $self->log( 5, "<Script> IF: <$if_first> not equals <$if_second> then do <$if_script>" );
             if ( $if_first ne $if_second ) {
                 $self->log( 4, "IF: It is not equal! Starting Script!" );
                 $script_self->_parse($if_script);
