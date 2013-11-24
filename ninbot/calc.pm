@@ -375,8 +375,7 @@ sub Handler {
         }
         else {
             my ( $author, undef ) = split( /,/, $acc_calc[2] );
-            if (   $acc_calc[6] =~ m/w/i
-                or $author eq $from_nick and $level >= $acc_calc[7] )
+            if ( ($acc_calc[6] =~ m/w/i) or ($author eq $from_nick and $level >= $acc_calc[7]) or ($level >= 10) )
             {
                 my $calc = $calc_self->del_Calc($calc_name);
                 $conn->privmsg( $from_channel, "Calc '$calc_name' gelöscht!" );
