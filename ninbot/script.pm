@@ -600,9 +600,7 @@ sub nif {
 
 # if WHAT OPERATOR WHAT then COMMAND - if statement
 sub if {
-    my ( $script_self, $do_this, $nick, $chan, $level, $param, $cmd_count,
-        @cmds )
-      = @_;
+    my ( $script_self, $do_this, $nick, $chan, $level, $param, $cmd_count, @cmds ) = @_;
     my $self  = &main::get_Self;
     my $conn  = $script_self->{_CONN};
     my $bot   = $script_self->{_BOT};
@@ -616,12 +614,8 @@ sub if {
 # while schleife commands bis nen else falls nen else drinne iss und mit den {} mal gucken vielleicht weglassen iss besser wegen allg {}
 # mal schauen
 #  if ($do_this =~ m/^(\")?.*?(\")?\W?((=)?=|eq|ne|\!=)\W?then\ \w+$/) {
-    if ( $do_this =~
-m/^\s*(.*?)\s*((?:=|eq|\!=|ne))\s*(.*?)\s+then\s+\{?(.*?)\}?\s*(else\s+\{?(.*)\}?)?$/i
-      )
-    {
-        my ( $if_first, $if_operator, $if_second, $if_script, $if_else ) =
-          ( $1, $2, $3, $4, $6 );
+    if ( $do_this =~ m/^\s*(.*?)\s*((?:=|eq|\!=|ne))\s*(.*?)\s+then\s+\{?(.*?)\}?\s*else\s+\{?(.*)\}??$/i ) {
+        my ( $if_first, $if_operator, $if_second, $if_script, $if_else ) = ( $1, $2, $3, $4, $5 );
         $self->log( 4, "<Script> IF: Correct Syntax <$do_this>" );
         my @if_script_cmds = split( /\:,/, $if_script );
         my @if_else_cmds   = split( /\:,/, $if_else );
