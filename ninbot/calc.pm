@@ -312,7 +312,7 @@ sub Handler {
     }
 
     # Plus Calc
-    elsif ( $message =~ m/^data\+\ (.*)\W+=\W?(.*)$/i ) {
+    elsif ( $message =~ m/^data\+\ (.*?)\W+=\W?(.*)$/i ) {
         my $calc_name = $1;
         my $calc_text = $2;
         my $num = $calc_self->plus_Calc( $calc_name, $from_nick, $calc_text );
@@ -328,7 +328,7 @@ sub Handler {
     }
     
     # Modify Calc
-    elsif ( $message =~ m/^data\*\ (.*)\W+=\W?(.*)$/i ) {
+    elsif ( $message =~ m/^data\*\ (.*?)\W+=\W?(.*)$/i ) {
         my $calc_name = $1;
         my $calc_text = $2;
         my $isnew = 0;
