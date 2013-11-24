@@ -783,7 +783,7 @@ sub set {
             }
             if ($authorized) {
                 $calc->del_Calc($set_name);
-                $calc->add_Calc( $set_name, $set_author, $set_value );
+                $calc->add_Calc( $set_name, $set_author, 0, "rw", $set_value );
             }
         }
     }
@@ -813,7 +813,7 @@ sub inc {
         }
         if ($authorized) {
             $calc->del_Calc($inc_name);
-            $calc->add_Calc( $inc_name, $inc_author, $inc_value );
+            $calc->add_Calc( $inc_name, $inc_author, 0, "rw", $inc_value );
         }
     }
     $self->log( 5, "<Script> inc = Increases variable from $nick($level) on $chan: $authorized" );
@@ -843,7 +843,7 @@ sub n_inc {
         }
         if ($authorized) {
             $calc->del_Calc($inc_name);
-            $calc->add_Calc( $inc_name, $inc_author, $inc_value );
+            $calc->add_Calc( $inc_name, $inc_author, 0, "rw", $inc_value );
         }
     }
     $self->log( 5, "<Script> n_inc = Increases nick variable $inc_name from $nick($level) on $chan: $authorized" );
@@ -914,7 +914,7 @@ sub dec {
         }
         if ($authorized) {
             $calc->del_Calc($dec_name);
-            $calc->add_Calc( $dec_name, $dec_author, $dec_value );
+            $calc->add_Calc( $dec_name, $dec_author, 0, "rw", $dec_value );
         }
     }
     $self->log( 5, "<Script> dec = Decreases variable $dec_name from $nick($level) on $chan: $authorized" );
@@ -944,7 +944,7 @@ sub n_dec {
         }
         if ($authorized) {
             $calc->del_Calc($dec_name);
-            $calc->add_Calc( $dec_name, $dec_author, $dec_value );
+            $calc->add_Calc( $dec_name, $dec_author, 0, "rw", $dec_value );
         }
     }
     $self->log( 5, "<Script> n_dec = Decrease nick variable $dec_name from $nick($level) on $chan: $authorized" );
@@ -973,7 +973,7 @@ sub n_set {
         }
         if ($authorized) {
             $calc->del_Calc($set_name);
-            $calc->add_Calc( $set_name, $set_author, $set_value );
+            $calc->add_Calc( $set_name, $set_author, 0, "rw", $set_value );
         }
     }
     $self->log( 5, "<Script> n_set = Set nick variable $set_name from $nick($level) on $chan: $authorized" );

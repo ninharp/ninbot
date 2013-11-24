@@ -22,8 +22,7 @@ sub new {
     my $self  = {@_};
     bless( $self, $class );
     $self->{_BOT} = &main::get_Self;
-    $self->{_DBH} =
-      $self->{_BOT}->{_DBH}; # allgemeiner dbh hier rein für allgmeeine funcs für text und sql
+    $self->{_DBH} = $self->{_BOT}->{_DBH}; # allgemeiner dbh hier rein für allgmeeine funcs für text und sql
     $self->{_BOT}->log( 3, "<Calc> Initialized..." );
     return $self;
 }
@@ -37,7 +36,7 @@ sub get_Calc {
         $calc =~ s/\'/\\\'/gi;
         $calc =~ s/\´/\\\´/gi;
 
-# Returns an array with all entries from column $3 that are like $2 from database $1
+		# Returns an array with all entries from column $3 that are like $2 from database $1
         @ret = $dbh->select( "calc", "^" . $calc . "\$" );
     }
     return @ret;
