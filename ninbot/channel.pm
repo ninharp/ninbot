@@ -31,6 +31,7 @@ sub new {
     my $conn = $self->{conn};
 
     my $channel = $channel_self->{_NAME};
+    $channel_self->{_NAME} = lc( $channel );
     $conn->join($channel);
     $self->log( 4, "<Channel> Created new channel object ($channel)" );
     return $channel_self;
