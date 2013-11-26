@@ -30,8 +30,8 @@ sub new {
     my $self = &main::get_Self;
     my $conn = $self->{conn};
 
+    $channel_self->{_NAME} = lc( $channel_self->{_NAME} );
     my $channel = $channel_self->{_NAME};
-    $channel_self->{_NAME} = lc( $channel );
     $conn->join($channel);
     $self->log( 4, "<Channel> Created new channel object ($channel)" );
     return $channel_self;

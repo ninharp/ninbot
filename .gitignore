@@ -2,4 +2,5 @@
 ninbot.channels
 documentation.*
 ninbot.conf
+ninbot.log
 nicks/*

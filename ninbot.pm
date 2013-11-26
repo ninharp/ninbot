@@ -87,7 +87,7 @@ sub read_Config {
     my $self = shift;
     my $ret  = 1;
 
-#my %config = ParseConfig(-ConfigFile => $self->{_CONFIG}, -AutoTrue => 1, -DefaultConfig => \%default_config);
+	#my %config = ParseConfig(-ConfigFile => $self->{_CONFIG}, -AutoTrue => 1, -DefaultConfig => \%default_config);
     my %config = ParseConfig( -ConfigFile => $self->{_CONFIG}, -AutoTrue => 1 );
     $self->{config} = \%config;
     $self->{_DEBUG} = $config{debug} if defined $config{debug};
@@ -115,7 +115,6 @@ sub read_Config {
         }
     }
 
-    #$self->{_CHANNEL} = new ninbot::channel;   # Loading Channel Module
     $self->{_USER}   = new ninbot::users;          # Loading Users Module
     $self->{_CALC}   = new ninbot::calc;           # Loading Calc Module
     $self->{_SCRIPT} = new ninbot::interpreter;    # Loading Script Module
@@ -129,7 +128,7 @@ sub read_Config {
 
     if ( open( CHANS, "$self->{config}->{channel_file}" ) ) {
         while (<CHANS>) {
-            next if $_ =~ m/^;/;
+            next if $_ =~ m/^\d?$/;
             my $key;
             my ( $channel, $topic, $flag, $comment ) = split( /;;;/, $_ );
             ( $channel, $key ) = split( /\ /, $channel ) if $channel =~ m/\s/;
@@ -138,8 +137,14 @@ sub read_Config {
         close(CHANS);
     }
     else {
-        print STDOUT "Error: $! => ./$self->{config}->{channel_file}\nYou have to run the install.sh script if you run for the first time!\n";
-        exit(1);
+		$self->log( 2, "<Main> Channels file does not exist! Creating a sample file" );
+		if ( open( CHANS, ">$self->{config}->{channel_file}" ) ) {
+			print CHANS "#ninscript;;;0;;;0;;;0";
+			close( CHANS );
+			$self->read_Config;
+		} else {
+			print STDOUT "Error: $! => ./$self->{config}->{channel_file}\nDo you have appropriate rights?!\n";
+		}
     }
     return $ret;
 }
