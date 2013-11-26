@@ -341,10 +341,10 @@ sub IRC_on_connect {
     $self->log( 1, "<Main:IRC> Connection established!" );
     if ( $self->{config}->{irc_botmode} == 1 ) {
         # Setting Botmode (euirc.net appliance)
-        $self->log( 1, "<Main:IRC> Botmode forced! Setting +B" );
+        $self->log( 1, "<Main:IRC> Botmode forced! Setting +B-x" );
         my $mynick = $self->{config}->{irc_nickname};
         $self->{conn}->sl_real( "MODE " . $mynick . " +B" );
-	$self->{conn}->sl_real( "MODE " . $mynick . " -x" );
+		$self->{conn}->sl_real( "MODE " . $mynick . " -x" );
     }
     if ( defined $self->{channels} ) {
         my @start_chans = keys %{ $self->{channels} };
@@ -588,6 +588,9 @@ sub IRC_on_public {
         }
     }
     elsif ( $message =~ m/^$trigger(.*?)$/i ) {
+		if ( !defined $self->{_CHANNEL}->{$from_channel}) {
+			$self->{_CHANNEL}->{$from_channel} = ninbot::channel->new( '_NAME' => $from_channel );
+		}
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
             $message =~ m/^.(.*)$/;
             my $command = $1;
