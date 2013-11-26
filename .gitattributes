@@ -1,0 +1,4 @@
+# see man gitattributes
+*.sh ident
+*.pl ident
+*.pm ident
