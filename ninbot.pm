@@ -339,6 +339,13 @@ sub IRC_on_connect {
     my $irc   = shift;
     my $event = shift;
     $self->log( 1, "<Main:IRC> Connection established!" );
+    if ( $self->{config}->{irc_botmode} == 1 ) {
+        # Setting Botmode (euirc.net appliance)
+        $self->log( 1, "<Main:IRC> Botmode forced! Setting +B" );
+        my $mynick = $self->{config}->{irc_nickname};
+        $self->{conn}->sl_real( "MODE " . $mynick . " +B" );
+	$self->{conn}->sl_real( "MODE " . $mynick . " -x" );
+    }
     if ( defined $self->{channels} ) {
         my @start_chans = keys %{ $self->{channels} };
         foreach (@start_chans) {
@@ -346,13 +353,7 @@ sub IRC_on_connect {
             $self->{_CHANNEL}->{$_} = ninbot::channel->new( '_NAME' => $_ );
         }
     }
-    if ( $self->{config}->{irc_botmode} == 1 ) {
 
-        # Setting Botmode (euirc.net appliance)
-        $self->log( 1, "<Main:IRC> Botmode forced! Setting +B" );
-        my $mynick = $self->{config}->{irc_nickname};
-        $self->{conn}->sl_real( "MODE " . $mynick . " +B" );
-    }
 }
 
 # IRC Handler on invite
