@@ -65,11 +65,10 @@ sub log {
         if ( !$daemon ) {
             print $level. ") " . $message;
         }
-        else {
-            open( LOG, ">>ninbot.log" );
-            print LOG $date . ": (" . $level . ") " . $message . "\n";
-            close(LOG);
-        }
+        
+        open( LOG, ">>ninbot.log" );
+        print LOG $date . ": (" . $level . ") " . $message . "\n";
+        close(LOG);
     }
 
     #  my $partyline = $self->{_PARTYLINE};
@@ -495,7 +494,7 @@ sub IRC_on_public {
     my $message      = @{ $msg_hash{args} }[0];
     my $from_nick    = $msg_hash{nick};
     my $from         = $msg_hash{from};
-    my $from_channel = $msg_hash{to}[0];
+    my $from_channel = lc($msg_hash{to}[0]);
     my $level        = $user->check_Level($from);
     my $trigger      = $self->{config}->{command_trigger};
     my $conn         = $self->{conn};
