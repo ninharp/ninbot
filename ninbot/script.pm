@@ -25,7 +25,6 @@ sub new {
     my $self = {
         '-param'    => '',
         '-return'   => '',
-        '-command'  => '',
         '-channel'  => '',
         '-nickname' => '',
         '-level'    => '',
@@ -57,9 +56,6 @@ sub DESTROY {
     my $self = shift;
     $self->{_BOT}->log( 3,
         "<Script> Script Object Destroyed. (" . $self->{'-command'} . ")" );
-    delete $self->{-param};
-    delete $self->{-command};
-    delete $self->{-return};
 }
 
 sub _parse {
@@ -426,50 +422,6 @@ sub _replace_Vars {
 }
 
 #### Scripting Functions
-
-sub disable_cmds {
-    my ( $script_self, $do_this, $nick, $chan, $level, $param, $cmd_count,
-        @cmds )
-      = @_;
-    my $bot   = $script_self->{_BOT};
-    my $inter = $script_self->{_PARENT};
-    my $calc  = $bot->{_CALC};
-    $inter->{command_disables} = $script_self->{-command};
-    my @comcalc = $calc->get_Calc( "data-var-" . $do_this );
-    if ( defined $comcalc[1] ) {
-        my @dis_com = split( /\s+/, $comcalc[1] );
-        foreach (@dis_com) {
-            $inter->{disabled_commands}->{$_} = 1;
-        }
-    }
-    $bot->log( 5, "<Script> disable_cmds = Disable commands '$do_this' from $nick($level) on $chan");
-}
-
-sub enable_cmds {
-    my ( $script_self, $do_this, $nick, $chan, $level, $param, $cmd_count,
-        @cmds )
-      = @_;
-    my $conn  = $script_self->{_CONN};
-    my $bot   = $script_self->{_BOT};
-    my $inter = $script_self->{_PARENT};
-    delete $inter->{command_disables};
-    if ( my $disabled = $inter->{disabled_commands} ) {
-        my %disabled = %{$disabled};
-        foreach ( keys %disabled ) {
-            delete $inter->{disabled_commands}->{$_};
-        }
-    }
-    if ( my $c_stack = $inter->{command_stack} ) {
-        my @d_cmds = @$c_stack;
-        foreach (@d_cmds) {
-            my ( $d_type, $d_chan, $d_message ) = split( /:::/, $_ );
-            $conn->$d_type( $d_chan, $d_message );
-        }
-    }
-    $inter->{command_stack}     = [];
-    $inter->{disabled_commands} = {};
-    $bot->log( 5, "<Script> enable_cmds = Enable commands from $nick($level) on $chan");
-}
 
 sub run {
     my ( $script_self, $do_this, $nick, $chan, $level, $param, $cmd_count,
