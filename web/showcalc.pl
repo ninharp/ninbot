@@ -283,6 +283,7 @@ sub dump_database() {
 	my $sth = $dbh->prepare("SELECT * FROM data");
 	if ( $sth->execute ) {
 	    while( my @row = $sth->fetchrow_array() ) {
+<<<<<<< HEAD
 			my $name = $row[1];
 			my $value = $row[2];
 			$value =~ s/\'//g;
@@ -294,11 +295,30 @@ sub dump_database() {
 			my $changed = $row[5];
 			my $flag = $row[6];
 			my $level = $row[7];
+=======
+			my $name = $row[0];
+			my $value = $row[1];
+			$value =~ s/\'//g;
+			#$value =~ s/\"/\\\"/g;
+			my $author = $row[2];
+			if (!defined $row[3]) { $row[3] = ""; };
+			my $time = $row[3];
+			if (!defined $row[4]) { $row[4] = ""; };
+			my $changed = $row[4];
+			my $flag = $row[5];
+			my $level = $row[6];
+			#INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country)
+			# VALUES ('Cardinal','Tom B. Erichsen','Skagen 21','Stavanger','4006','Norway');
+>>>>>>> d9a23d282d32759b0fd7d32e57ee6a959056bcef
 			print("INSERT INTO data (name, value, author, time, changed, flag, level) VALUES ('".$name."','".$value."','".$author."','".$time."','".$changed."','".$flag."','".$level."');\n");
 	    }
 	}
 	print "/*!40000 ALTER TABLE `data` ENABLE KEYS */;
+<<<<<<< HEAD
 			UNLOCK TABLES;\n";
+=======
+			UNLOCK TABLES;"
+>>>>>>> d9a23d282d32759b0fd7d32e57ee6a959056bcef
 }
 
 
