@@ -69,13 +69,16 @@ sub _get_fields {
     $sth->finish;
     @{ $backend->{_fields_user} } = @fields;
     undef @fields;
-    $sth = $backend->{_DBH}->prepare("SHOW COLUMNS FROM calc");
+    $sth = $backend->{_DBH}->prepare("SHOW COLUMNS FROM data");
     $sth->execute;
     while ( my @row = $sth->fetchrow_array() ) {
-        push( @fields, $row[0] );
+		if ($row[0] !~ m/^nr$/i) {
+			push( @fields, $row[0] );
+		}
     }
+    #print Dumper(@fields);
     $sth->finish;
-    @{ $backend->{_fields_calc} } = @fields;
+    @{ $backend->{_fields_data} } = @fields;
     undef @fields;
 }
 
@@ -95,8 +98,8 @@ sub add {
           . "]')" );
     my $ret     = 0;
     my $counter = 0;
-    if ( $database =~ m/^(?:user|calc)$/i ) {
-        if ( $database =~ m/calc/i and scalar(@values) < 8 ) {
+    if ( $database =~ m/^(?:user|data)$/i ) {
+        if ( $database =~ m/data/i and scalar(@values) < 7 ) {
             $self->log( 4, "<mySQL> [$database] add = Not enough values!" );
             last;
         }
@@ -116,18 +119,13 @@ sub add {
 
 		$backend->check_dbi();
 		
-        my $sth =
-          $backend->{_DBH}
-          ->prepare("INSERT INTO $database($sql_fields) VALUES($sql_values)");
+        my $sth = $backend->{_DBH}->prepare("INSERT INTO $database($sql_fields) VALUES($sql_values)");
         if ( !$sth->execute ) {
             $ret = 2;
             $self->log( 4, "<mySQL> [$database] add = Failed SQL Statement!" );
         }
         else {
-            $self->log( 4,
-                    "<mySQL> [$database] add = Added successfully! ("
-                  . $values[0]
-                  . ")" );
+            $self->log( 4, "<mySQL> [$database] add = Added successfully! (". $values[0]. ")" );
             $ret = 1;
         }
         $sth->finish();
@@ -149,7 +147,7 @@ sub match {
     $column = 0 if !defined $column;
     $self->log( 4, "<mySQL> [$database] match($database, '$like', $column)" );
     my @ret;
-    if ( $database =~ m/^(?:user|calc)$/i ) {
+    if ( $database =~ m/^(?:user|data)$/i ) {
         my $fieldname = "_fields_" . $database;
         my @fields    = @{ $backend->{$fieldname} };
         my $field     = $fields[$column];
@@ -157,21 +155,18 @@ sub match {
         $like =~ s/\´/\\\´/gi;
         $backend->check_dbi();
         my $sth =
-          $backend->{_DBH}
-          ->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
+          $backend->{_DBH}->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
         if ( $sth->execute ) {
             while ( my @row = $sth->fetchrow_array() ) {
-				if ( !defined $row[3] ) { $row[3] = ""; }
-                if ( !defined $row[4] ) { $row[4] = ""; }
+				if ( !defined $row[4] ) { $row[4] = ""; }
                 if ( !defined $row[5] ) { $row[5] = ""; }
+                if ( !defined $row[6] ) { $row[6] = ""; }
                 my $return = join( $join, @row );
                 push( @ret, $return );
             }
         }
         if ( scalar(@ret) <= 0 ) {
-            $self->log( 4,
-                "<mySQL> [$database] match = Nothing found! ('$like')[$column]"
-            );
+            $self->log( 4, "<mySQL> [$database] match = Nothing found! ('$like')[$column]" );
         }
         else {
             my $num_entries = $sth->rows;
@@ -218,18 +213,15 @@ sub update {
     my $index_field = $fields[0];
     my $up_fields;
 
-    for ( my $i = 1 ; $i < scalar(@fields) ; $i++ ) {
-        $up_fields .= $fields[$i] . "='" . $data[$i] . "'";
+    for ( my $i = 0 ; $i < scalar(@fields) ; $i++ ) {
+        $up_fields .= $fields[$i] . "='" . $data[$i+1] . "'";
         $up_fields .= ", " if $i != scalar(@fields) - 1;
     }
-    $self->log( 4, "<mySQL> [$database] update($database, '@data')" );
+    $self->log( 4, "<mySQL> [$database] update($database, '$up_fields')" );
     $backend->check_dbi();
-    my $sth =
-      $backend->{_DBH}->prepare(
-        "UPDATE $database SET $up_fields WHERE $index_field='$data[0]'");
+    my $sth = $backend->{_DBH}->prepare( "UPDATE $database SET $up_fields WHERE $index_field='$data[1]'");
     $ret = $sth->execute;
-    $self->log( 4, "<mySQL> [$database] update = Successfully updated!" )
-      if $ret;
+    $self->log( 4, "<mySQL> [$database] update = Successfully updated!" ) if $ret;
     $self->log( 4, "<mySQL> [$database] update = Not updated!" ) if !$ret;
     $sth->finish;
     return $ret;
@@ -245,19 +237,18 @@ sub select {
     $column = 0 if !defined $column;
     $self->log( 4, "<mySQL> [$database] select($database, '$like', $column)" );
     my @ret;
-    if ( $database =~ m/^(?:user|calc)$/i ) {
+    if ( $database =~ m/^(?:user|data)$/i ) {
         my $fieldname = "_fields_" . $database;
         my @fields    = @{ $backend->{$fieldname} };
         my $field     = $fields[$column];
         $like =~ s/\'/\\\'/gi;
         $like =~ s/\´/\\\´/gi;
         $backend->check_dbi();
-        my $sth =
-          $backend->{_DBH}->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
+        my $sth = $backend->{_DBH}->prepare("SELECT * FROM $database WHERE $field REGEXP '$like'");
         if ( $sth->execute ) {
             @ret = $sth->fetchrow_array();
             $self->log( 4, "<mySQL> [$database] select = Found entry!" )
-              if ( defined $ret[0] and $ret[$column] =~ m/$like/i );
+              if ( defined $ret[1] and $ret[$column] =~ m/$like/i );
         }
         $sth->finish();
         if ( scalar(@ret) <= 0 ) {
@@ -283,13 +274,13 @@ sub select_all {
     my $self = $backend->{_BOT};
     $self->log( 4, "<mySQL> [$database] select_all($database, '$join')" );
     my @ret;
-    if ( $database =~ m/^(?:user|calc)$/i ) {
+    if ( $database =~ m/^(?:user|data)$/i ) {
         my $sth = $backend->{_DBH}->prepare("SELECT * FROM $database");
         if ( $sth->execute ) {
             while ( my @row = $sth->fetchrow_array() ) {
-				if ( !defined $row[3] ) { $row[3] = ""; }
-                if ( !defined $row[4] ) { $row[4] = ""; }
+				if ( !defined $row[4] ) { $row[4] = ""; }
                 if ( !defined $row[5] ) { $row[5] = ""; }
+                if ( !defined $row[6] ) { $row[6] = ""; }
                 my $return = join( $join, @row );
                 push( @ret, $return );
             }

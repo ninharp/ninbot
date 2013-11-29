@@ -354,7 +354,7 @@ sub _replace_Vars {
 
         #my @c = $calc->get_Calc("data-var-".$calc_name);
         my @c = $calc->get_Calc($calc_name);
-        my $var = $c[1] if defined $c[1];
+        my $var = $c[2] if defined $c[2];
         $var = $self->_replace_Vars($var) if defined $var;
         $com =~ s/\[\[(.*?)\]\]/$var/gi if defined $var;
     }
@@ -437,7 +437,7 @@ sub disable_cmds {
     $inter->{command_disables} = $script_self->{-command};
     my @comcalc = $calc->get_Calc( "data-var-" . $do_this );
     if ( defined $comcalc[1] ) {
-        my @dis_com = split( /\s+/, $comcalc[1] );
+        my @dis_com = split( /\s+/, $comcalc[2] );
         foreach (@dis_com) {
             $inter->{disabled_commands}->{$_} = 1;
         }
@@ -481,10 +481,10 @@ sub run {
     $do_this =~ s/^"(.*)"$/$1/;
     $do_this =~ s/\s/_/g;
     my @run_calc = $calc->get_Calc( "data-prg-" . $do_this );
-    if ( defined $run_calc[1] ) {
+    if ( defined $run_calc[2] ) {
 
-        if ( $level >= $run_calc[7] or $nick = $run_calc[2] ) {
-            my $ret = $script_self->_parse( $run_calc[1] );
+        if ( $level >= $run_calc[7] or $nick = $run_calc[3] ) {
+            my $ret = $script_self->_parse( $run_calc[2] );
         }
     }
     $self->log( 5, "Script Module: run = Run subroutine data-prg-$do_this from $nick($level) on $chan");
@@ -500,10 +500,10 @@ sub cmd {
     $do_this =~ s/^"(.*)"$/$1/;
     $do_this =~ s/\s/_/g;
     my @run_calc = $calc->get_Calc( "com-" . $do_this );
-    if ( defined $run_calc[1] ) {
+    if ( defined $run_calc[2] ) {
 
-        if ( $level >= $run_calc[7] or $nick = $run_calc[2] ) {
-            my $ret = $script_self->_parse( $run_calc[1] );
+        if ( $level >= $run_calc[7] or $nick = $run_calc[3] ) {
+            my $ret = $script_self->_parse( $run_calc[2] );
         }
     }
     $self->log( 5, "<Script> cmd = Run command com-$do_this from $nick($level) on $chan" );
@@ -768,8 +768,8 @@ sub set {
             my @set_calc   = $calc->get_Calc($set_name);
             my $set_author = $nick;
             if ( $set_calc[1] ) {
-                $set_author = $set_calc[2];
-                if ( $level < $set_calc[7] or $set_calc[2] !~ m/^$nick$/ ) {
+                $set_author = $set_calc[3];
+                if ( $level < $set_calc[7] or $set_calc[3] !~ m/^$nick$/ ) {
                     $authorized = 0;
                 }
             }
@@ -796,8 +796,8 @@ sub inc {
         my @inc_calc   = $calc->get_Calc($inc_name);
         my $inc_author = $nick;
         if ( $inc_calc[1] ) {
-            $inc_author = $inc_calc[2];
-            $inc_value  = $inc_calc[1];
+            $inc_author = $inc_calc[3];
+            $inc_value  = $inc_calc[2];
             $inc_value++;
             if ( $level < $inc_calc[7] or $inc_calc[6] !~ m/^rw$/i ) {
                 $authorized = 0;
@@ -826,8 +826,8 @@ sub n_inc {
         my @inc_calc   = $calc->get_Calc($inc_name);
         my $inc_author = $nick;
         if ( $inc_calc[1] ) {
-            $inc_author = $inc_calc[2];
-            $inc_value  = $inc_calc[1];
+            $inc_author = $inc_calc[3];
+            $inc_value  = $inc_calc[2];
             $inc_value++;
             if ( $level < $inc_calc[7] or $inc_calc[6] !~ m/^rw$/i ) {
                 $authorized = 0;
@@ -896,9 +896,9 @@ sub dec {
         $dec_name =~ s/^"(.*)"$/$1/;
         my @dec_calc   = $calc->get_Calc($dec_name);
         my $dec_author = $nick;
-        if ( $dec_calc[1] ) {
-            $dec_author = $dec_calc[2];
-            $dec_value  = $dec_calc[1];
+        if ( $dec_calc[2] ) {
+            $dec_author = $dec_calc[3];
+            $dec_value  = $dec_calc[2];
             $dec_value--;
             if ( $level < $dec_calc[7] or $dec_calc[6] !~ m/^rw$/i ) {
                 $authorized = 0;
@@ -926,9 +926,9 @@ sub n_dec {
         $dec_name =~ s/^"(.*)"$/$1/;
         my @dec_calc   = $calc->get_Calc($dec_name);
         my $dec_author = $nick;
-        if ( $dec_calc[1] ) {
-            $dec_author = $dec_calc[2];
-            $dec_value  = $dec_calc[1];
+        if ( $dec_calc[2] ) {
+            $dec_author = $dec_calc[3];
+            $dec_value  = $dec_calc[2];
             $dec_value--;
             if ( $level < $dec_calc[7] or $dec_calc[6] !~ m/^rw$/i ) {
                 $authorized = 0;
@@ -957,9 +957,9 @@ sub n_set {
         $set_value =~ s/^"(.*)"$/$1/;
         my @set_calc   = $calc->get_Calc($set_name);
         my $set_author = $nick;
-        if ( $set_calc[1] ) {
-            $set_author = $set_calc[2];
-            if ( $level < $set_calc[7] or $set_calc[2] !~ m/^$nick$/ ) {
+        if ( $set_calc[2] ) {
+            $set_author = $set_calc[3];
+            if ( $level < $set_calc[7] or $set_calc[3] !~ m/^$nick$/ ) {
                 $authorized = 0;
             }
         }

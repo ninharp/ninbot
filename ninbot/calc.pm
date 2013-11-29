@@ -17,6 +17,8 @@
 #
 package ninbot::calc;
 
+use Data::Dumper;
+
 sub new {
     my $class = shift;
     my $self  = {@_};
@@ -37,7 +39,7 @@ sub get_Calc {
         $calc =~ s/\´/\\\´/gi;
 
 		# Returns an array with all entries from column $3 that are like $2 from database $1
-        @ret = $dbh->select( "calc", "^" . $calc . "\$" );
+        @ret = $dbh->select( "data", "^" . $calc . "\$" );
     }
     return @ret;
 }
@@ -48,15 +50,16 @@ sub rand_Calc {
     my $self      = &main::get_Self;
     my $ret       = 0;
     my $dbh       = $calc_self->{_DBH};
-    my @entries   = $dbh->select_all( "calc", ";;;" );
+    my @entries   = $dbh->select_all( "data", ";;;" );
     my $rand      = int( rand( scalar(@entries) ) );
-    while ( $entries[$rand] =~ m/^com-/i or $entries[$rand] =~ m/^data-/i ) {
+    while ( $entries[$rand] =~ m/;;;com-/i or $entries[$rand] =~ m/;;;data-/i ) {
         $rand = int( rand( scalar(@entries) ) );
     }
     my $return = $entries[$rand];
+    print $return."\n\n\n";
     my @ret = split( /;;;/, $return );
-    if ( $ret[3] =~ m/\n/ ) {
-        $ret[3] =~ s/\n//g;
+    if ( $ret[4] =~ m/\n/ ) {
+        $ret[4] =~ s/\n//g;
     }
     return @ret;
 }
@@ -67,7 +70,7 @@ sub rand_com_Calc {
     my $self      = &main::get_Self;
     my $ret       = 0;
     my $dbh       = $calc_self->{_DBH};
-    my @entries   = $dbh->select_all( "calc", ";;;" );
+    my @entries   = $dbh->select_all( "data", ";;;" );
     my $rand      = int( rand( scalar(@entries) ) );
     while ( $entries[$rand] !~ m/^com-/i or $entries[$rand] =~ m/^data-/i ) {
         $rand = int( rand( scalar(@entries) ) );
@@ -87,7 +90,7 @@ sub del_Calc {
     my $dbh  = $calc_self->{_DBH};
     my $ret  = 0;
     if ( defined $name ) {
-        $ret = $dbh->del( "calc", $name );
+        $ret = $dbh->del( "data", $name );
     }
     return $ret;
 }
@@ -115,10 +118,9 @@ sub add_Calc {
         my $mode    = 0;
         my $changed = "";
         my $level   = $calc_level;
-        my @add =
-          ( $name, $text, $author, $date, $changed, $mode, $flag, $level );
-        $ret = $dbh->add( "calc", @add );
-        $ret = 0 if $ret == -1;
+        my @add = ( $name, $text, $author, $date, $changed, $flag, $level );
+        $ret = $dbh->add( "data", @add );
+        #$ret = 0 if $ret == -1;
     }
     return $ret;
 }
@@ -143,9 +145,8 @@ sub plus_Calc {
     my $mode    = 0;
     my $changed = "";
     my $level   = 0;
-    my @add =
-      ( $calc_name, $text, $author, $date, $changed, $mode, $flag, $level );
-    $ret = $dbh->add( "calc", @add );
+    my @add = ( $calc_name, $text, $author, $date, $changed, $flag, $level );
+    $ret = $dbh->add( "data", @add );
     if ( $ret == 2 or $ret == -1 ) {
         $ret = -1;
     }
@@ -163,11 +164,12 @@ sub set_Flag {
     my $date = localtime();
     if ( $calc_flag =~ m/^(?:rw|ro|0)$/i ) {
         my @calc = $calc_self->get_Calc($calc_name);
-        $calc[0] =~ s/\'/\\\'/g if defined $calc[0];
         $calc[1] =~ s/\'/\\\'/g if defined $calc[1];
-        $cacl[3] = $date;
+        $calc[2] =~ s/\'/\\\'/g if defined $calc[2];
+        $calc[4] = $date;
         $calc[6] = $calc_flag;
-        $ret = $dbh->update( "calc", @calc );
+        print Dumper(@calc);
+        $ret = $dbh->update( "data", @calc );
         return $ret;
     }
     else {
@@ -183,11 +185,11 @@ sub set_Level {
     my $date = localtime();
     if ( $calc_flag =~ m/^(?:rw|ro|0)$/i ) {
         my @calc = $calc_self->get_Calc($calc_name);
-        $calc[0] =~ s/\'/\\\'/g if defined $calc[0];
         $calc[1] =~ s/\'/\\\'/g if defined $calc[1];
-        $cacl[3] = $date;
+        $calc[2] =~ s/\'/\\\'/g if defined $calc[2];
+        $calc[4] = $date;
         $calc[7] = $calc_level;
-        $ret = $dbh->update( "calc", @calc );
+        $ret = $dbh->update( "data", @calc );
         return $ret;
     }
     else {
@@ -203,14 +205,15 @@ sub match_Calc {
     $match_string = "(^com-)?" . $match_string;
     my @ret;
     my $dbh = $calc_self->{_DBH};
-    my @found = $dbh->match( "calc", $match_string );
+    my @found = $dbh->match( "data", $match_string );
     foreach $entry (@found) {
         my @row = split( /;;;/, $entry );
-        if ( $row[0] =~ m/^com-/i ) {
-            push( @ret, "!" . substr( $row[0], 4, length( $row[0] ) ) );
+        my ( $nr, $name, $text, $author, $date, $changed, $flag, $level ) = @row;
+        if ( $name =~ m/^com-/i ) {
+            push( @ret, "!" . substr( $name, 4, length( $name ) ) );
         }
-        elsif ( $row[0] !~ m/^data-/i ) {
-            push( @ret, $row[0] );
+        elsif ( $name !~ m/^data-/i ) {
+            push( @ret, $name );
         }
     }
     return @ret;
@@ -222,10 +225,10 @@ sub list_Com {
     my @ret;
     my $dbh         = $calc_self->{_DBH};
     my $bot         = $calc_self->{_BOT};
-    my @com_entries = $dbh->match( "calc", "^com-" );
+    my @com_entries = $dbh->match( "data", "^com-" );
     foreach $entry (@com_entries) {
         my @row = split( /;;;/, $entry );
-        my $command = $row[0];
+        my $command = $row[1];
         $command =~ s/^com-/$bot->{config}->{command_trigger}/i;
         push( @ret, $command );
     }
@@ -251,12 +254,21 @@ sub Handler {
     # Random Calc
     if ( $message =~ m/^data$/i ) {
         my @calc = $calc_self->rand_Calc;
-        if ( defined $calc[0] ) {
-            while ( $calc[6] !~ m/r/i and $level >= $calc[7] ) {
+        my $nr = $calc[0];
+        my $name = $calc[1];
+        my $value = $calc[2];
+        my $author = $calc[3];
+        my $date = $calc[4];
+        my $changed = $calc[5];
+        my $flag = $calc[6];
+        my $clevel = $calc[7];
+        if ( defined $name ) {
+            while ( $flag !~ m/r/i and $level >= $clevel ) {
                 @calc = $calc_self->rand_Calc;
             }
-            my ( $name, $text, $author, $date, undef, undef, undef ) = @calc;
-            $conn->privmsg( $from_channel, "* " . $name . " = " . $text . " [" . $author . ", " . $date . ", " . $calc[6] . "/" . $calc[7] . "]" );
+            ( $nr, $name, $value, $author, $date, $changed, $flag, $clevel ) = @calc;
+            
+            $conn->privmsg( $from_channel, "* " . $name . " = " . $value . " [" . $author . ", " . $date . ", " . $flag . "/" . $clevel . "]");
         }
         else {
             $conn->privmsg( $from_channel, "* Sorry but the database is still empty ;(" );
@@ -284,30 +296,29 @@ sub Handler {
         my $calc_name = $1;
         if ( $calc_name !~ m/^\W*$/i ) {
             my @calc = $calc_self->get_Calc($calc_name);
-            if ( !defined $calc[1] ) {
+            my $nr = $calc[0];
+			my $name = $calc[1];
+			my $value = $calc[2];
+			my $author = $calc[3];
+			my $date = $calc[4];
+			my $changed = $calc[5];
+			my $flag = $calc[6];
+			my $clevel = $calc[7];
+            if ( !defined $name ) {
                 $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name'" );
             }
             else {
-                if (   $calc[6] =~ m/r/i or $calc[2] eq $from_nick and $level >= $calc[7] ) {
+                if ( $flag =~ m/r/i or $author eq $from_nick and $level >= $clevel ) {
                     if ( length( $calc[1] ) >= 395 ) {
-                        my $new_calc = substr( $calc[1], 0, 395 ) . "...";
-                        $conn->privmsg( $from_channel,
-							"* $calc[0] = $new_calc [$calc[2], $calc[3], $calc[6]/$calc[7]]"
-                        );
+                        $value = substr( $value, 0, 395 ) . "...";
                     }
-                    else {
-                        $conn->privmsg( $from_channel,
-							"* $calc[0] = $calc[1] [$calc[2], $calc[3], $calc[6]/$calc[7]]"
-                        );
-                    }
+                    $conn->privmsg( $from_channel, "* $name = $value [$author, $date, $flag/$clevel]" );
                 }
                 else {
-                    $conn->privmsg( $from_channel,
-                        "Calc '$calc_name' ist privat!" );
+                    $conn->privmsg( $from_channel, "Calc '$calc_name' ist privat!" );
                 }
             }
-            $self->log( 3, "<Calc> Requesting entry $calc_name from $from_nick($level) on $from_channel!"
-            );
+            $self->log( 3, "<Calc> Requesting entry $calc_name from $from_nick($level) on $from_channel!");
         }
     }
 
@@ -393,26 +404,30 @@ sub Handler {
         my $calc_name = $1;
         my $calc_flag = $2;
         my @acc_calc  = $calc_self->get_Calc($calc_name);
-        my ( $author, undef ) = split( /,/, $acc_calc[2] );
-        if ( !defined $acc_calc[1] ) {
-            $conn->privmsg( $from_channel,
-                "Kein Calc fuer '$calc_name' in der Datenbank!" );
+        my $nr = $acc_calc[0];
+		my $name = $acc_calc[1];
+		my $value = $acc_calc[2];
+		my $author = $acc_calc[3];
+		my $date = $acc_calc[4];
+		my $changed = $acc_calc[5];
+		my $flag = $acc_calc[6];
+		my $clevel = $acc_calc[7];
+        #my ( $author, undef ) = split( /,/, $acc_calc[2] );
+        if ( !defined $value ) {
+            $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name' in der Datenbank!" );
         }
         else {
-            if (   $author eq $from_nick
-                or $acc_calc[6] =~ m/w/i and $level >= $acc_calc[7] )
+            if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel )
             {
                 if ( my $ret = $calc_self->set_Flag( $calc_name, $calc_flag ) )
                 {
-                    $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' sind nun auf $calc_flag gesetzt!"
-                    );
+                    $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' sind nun auf $calc_flag gesetzt!" );
                 }
                 elsif ( $ret == -1 ) {
                     $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' sind nicht korrekt!" );
                 }
                 else {
-                    $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' konnten nicht gesetzt werden!"
-                    );
+                    $conn->privmsg( $from_channel, "Calc Flags für '$calc_name' konnten nicht gesetzt werden!" );
                 }
             }
             else {
@@ -427,18 +442,22 @@ sub Handler {
         my $calc_name  = $1;
         my $calc_level = $2;
         my @acc_calc   = $calc_self->get_Calc($calc_name);
-        my ( $author, undef ) = split( /,/, $acc_calc[2] );
+        my $nr = $acc_calc[0];
+		my $name = $acc_calc[1];
+		my $value = $acc_calc[2];
+		my $author = $acc_calc[3];
+		my $date = $acc_calc[4];
+		my $changed = $acc_calc[5];
+		my $flag = $acc_calc[6];
+		my $clevel = $acc_calc[7];
+        #my ( $author, undef ) = split( /,/, $acc_calc[2] );
         if ( !defined $acc_calc[1] ) {
-            $conn->privmsg( $from_channel,
-                "Kein Calc fuer '$calc_name' in der Datenbank!" );
+            $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name' in der Datenbank!" );
         }
         else {
-            if (   $author eq $from_nick
-                or $acc_calc[6] =~ m/w/i and $level >= $acc_calc[7] )
-            {
+            if ( $author eq $from_nick or $author =~ m/w/i and $level >= $clevel ) {
                 if ( $calc_level <= $level ) {
-                    if ( my $ret =
-                        $calc_self->set_Level( $calc_name, $calc_level ) )
+                    if ( my $ret = $calc_self->set_Level( $calc_name, $calc_level ) )
                     {
                         $conn->privmsg( $from_channel, "Calc Level für '$calc_name' ist nun auf $calc_level gesetzt!" );
                     }

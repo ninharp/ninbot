@@ -139,7 +139,7 @@ sub _get_Var {
     my $calc = $self->{_CALC};
     my $ret;
     my @var_calc = $calc->get_Calc($var_name);
-    $ret = $var_calc[1] if defined $var_calc[1];
+    $ret = $var_calc[2] if defined $var_calc[2];
     return $ret;
 }
 

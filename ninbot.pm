@@ -269,9 +269,14 @@ sub quit {
 # Gets actual IP
 # TODO: change to some better
 sub get_IP {
+    my $self = shift;
+	$self->log( 3, "<Main> Trying to get your IP... " );
     my $ipfile = "http://athena.noxa.de/~michael/ip.pl";
     my $ip     = `lynx -source $ipfile`;
-    chop($ip);
+    if ($ip =~ m/.*\<pre\>(.*)\<\/pre\>.*/) {
+		$ip = $1;
+	} else { $ip = "0.0.0.0"; }
+    $self->log(3, "<Main> Got your IP: ".$ip );
     return $ip;
 }
 
@@ -606,13 +611,8 @@ sub IRC_on_public {
             }
             $self->log( 3, "<Main:IRC:pub> Searching Script for Command '$command' [$param]" );
             my @calc = $calc_self->get_Calc( "com-" . $command );
-            if ( defined $calc[1] ) {
-
-                # name;;;value;;;author;;;time;;;changed;;;mode;;;flag;;;level
-                my (
-                    $calc_name,    $calc_text, $calc_nick, $calc_date,
-                    $calc_changed, $calc_mode, $calc_flag, $calc_level
-                ) = @calc;
+            if ( defined $calc[2] ) {
+                my ( $nr, $calc_name, $calc_text, $calc_nick, $calc_date, $calc_changed, $calc_mode, $calc_flag, $calc_level ) = @calc;
                 $self->log( 4, "<Main:IRC:pub> Found Calc Command for '$command'" );
                 if ( $calc_text =~ m/\{(.*)\}/i ) {
                     my $script = $1;
@@ -629,6 +629,7 @@ sub IRC_on_public {
                     $self->log( 4, "<Main:IRC:pub> Entering Handler $handler from Calc!" );
                     my $HDL = $self->{ "_" . uc($handler) };
                     $param = " " . $param if $param ne "";
+                    $conn->privmsg( $from_channel, "3rd Party Module werden in kürze unterstützt!" );
 					#$HDL->Handler($from_nick, $from_channel, $self->{config}->{command_trigger}.$command.$param);
                 }
                 elsif ( $calc_text =~ m/^\!\!(.*)/i ) {
