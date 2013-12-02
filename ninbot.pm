@@ -241,7 +241,7 @@ sub handle_Event {
     if ( length($do_events) > 1 ) {
         my @events = split( / /, $do_events );
         foreach my $event (@events) {
-            my @event_calc = $calc->get_Calc( "data-" . $event );
+            my @event_calc = $calc->get_Calc( $event );
             if ( defined $event_calc[0] ) {
                 my $event_script = $event_calc[1];
                 $self->log( 3, "<Main:IRC> Running $event_type event for channel $from_channel: $event" );
