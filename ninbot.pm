@@ -613,6 +613,7 @@ sub IRC_on_public {
             my @calc = $calc_self->get_Calc( "com-" . $command );
             if ( defined $calc[2] ) {
                 my ( $nr, $calc_name, $calc_text, $calc_nick, $calc_date, $calc_changed, $calc_mode, $calc_flag, $calc_level ) = @calc;
+                if (!defined $calc_level) $calc_level = 0;
                 $self->log( 4, "<Main:IRC:pub> Found Calc Command for '$command'" );
                 if ( $calc_text =~ m/\{(.*)\}/i ) {
                     my $script = $1;
