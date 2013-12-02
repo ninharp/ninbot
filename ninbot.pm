@@ -229,21 +229,21 @@ sub handle_Event {
     my $user         = $self->{_USER};
     my $level        = $user->check_Level($from);
     my $do_events    = "";
-    $do_events = $calc[1] if defined $calc[0];
+    $do_events = $calc[2] if defined $calc[1];
     my @c_calc = $calc->get_Calc("data-event-$from_channel-$event_type");
     my @n_calc = $calc->get_Calc("data-event-$from_nick-$event_type");
     my @n_c_calc =
-      $calc->get_Calc("data-event-$from_channel-$from_nick-$event_type");
-    $do_events .= " " . $c_calc[1]   if defined $c_calc[0];
-    $do_events .= " " . $n_calc[1]   if defined $n_calc[0];
-    $do_events .= " " . $n_c_calc[1] if defined $n_c_calc[0];
+    $calc->get_Calc("data-event-$from_channel-$from_nick-$event_type");
+    $do_events .= " " . $c_calc[1]   if defined $c_calc[1];
+    $do_events .= " " . $n_calc[1]   if defined $n_calc[1];
+    $do_events .= " " . $n_c_calc[1] if defined $n_c_calc[1];
 
     if ( length($do_events) > 1 ) {
         my @events = split( / /, $do_events );
         foreach my $event (@events) {
-            my @event_calc = $calc->get_Calc( "data-" . $event );
-            if ( defined $event_calc[0] ) {
-                my $event_script = $event_calc[1];
+            my @event_calc = $calc->get_Calc( $event );
+            if ( defined $event_calc[1] ) {
+                my $event_script = $event_calc[2];
                 $self->log( 3, "<Main:IRC> Running $event_type event for channel $from_channel: $event" );
                 $script->parse_Script( $from_nick, $from_channel, $event_script, $level );
             }
@@ -269,9 +269,14 @@ sub quit {
 # Gets actual IP
 # TODO: change to some better
 sub get_IP {
+    my $self = shift;
+	$self->log( 3, "<Main> Trying to get your IP... " );
     my $ipfile = "http://athena.noxa.de/~michael/ip.pl";
     my $ip     = `lynx -source $ipfile`;
-    chop($ip);
+    if ($ip =~ m/.*\<pre\>(.*)\<\/pre\>.*/) {
+		$ip = $1;
+	} else { $ip = "0.0.0.0"; }
+    $self->log(3, "<Main> Got your IP: ".$ip );
     return $ip;
 }
 
@@ -606,13 +611,9 @@ sub IRC_on_public {
             }
             $self->log( 3, "<Main:IRC:pub> Searching Script for Command '$command' [$param]" );
             my @calc = $calc_self->get_Calc( "com-" . $command );
-            if ( defined $calc[1] ) {
-
-                # name;;;value;;;author;;;time;;;changed;;;mode;;;flag;;;level
-                my (
-                    $calc_name,    $calc_text, $calc_nick, $calc_date,
-                    $calc_changed, $calc_mode, $calc_flag, $calc_level
-                ) = @calc;
+            if ( defined $calc[2] ) {
+                my ( $nr, $calc_name, $calc_text, $calc_nick, $calc_date, $calc_changed, $calc_mode, $calc_flag, $calc_level ) = @calc;
+                $calc_level = 0 if (!defined $calc_level);
                 $self->log( 4, "<Main:IRC:pub> Found Calc Command for '$command'" );
                 if ( $calc_text =~ m/\{(.*)\}/i ) {
                     my $script = $1;
@@ -629,6 +630,7 @@ sub IRC_on_public {
                     $self->log( 4, "<Main:IRC:pub> Entering Handler $handler from Calc!" );
                     my $HDL = $self->{ "_" . uc($handler) };
                     $param = " " . $param if $param ne "";
+                    $conn->privmsg( $from_channel, "3rd Party Module werden in kürze unterstützt!" );
 					#$HDL->Handler($from_nick, $from_channel, $self->{config}->{command_trigger}.$command.$param);
                 }
                 elsif ( $calc_text =~ m/^\!\!(.*)/i ) {
