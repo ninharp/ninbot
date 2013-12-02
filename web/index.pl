@@ -549,7 +549,11 @@ if ( !defined param('m') and defined param('a') ) {
      # default
      show_calc();
 	}
+<<<<<<< HEAD
 } elsif ( defined param('m') ){
+=======
+} else if ( defined param('m') ){
+>>>>>>> ac615b7ec87215094f03cc23b44b9f04b5812a18
 	$_ = param('m');
 
 	CASE: {
