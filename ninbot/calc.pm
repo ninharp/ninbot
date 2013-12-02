@@ -183,18 +183,14 @@ sub set_Level {
     my $dbh  = $calc_self->{_DBH};
     my $ret  = 0;
     my $date = localtime();
-    if ( $calc_flag =~ m/^(?:rw|ro|0)$/i ) {
-        my @calc = $calc_self->get_Calc($calc_name);
-        $calc[1] =~ s/\'/\\\'/g if defined $calc[1];
-        $calc[2] =~ s/\'/\\\'/g if defined $calc[2];
-        $calc[4] = $date;
-        $calc[7] = $calc_level;
-        $ret = $dbh->update( "data", @calc );
-        return $ret;
-    }
-    else {
-        $ret = -1;
-    }
+    my @calc = $calc_self->get_Calc($calc_name);
+    $calc_level = 0 if ($calc_level > 10 or $calc_level < 0);
+    $calc[1] =~ s/\'/\\\'/g if defined $calc[1];
+    $calc[2] =~ s/\'/\\\'/g if defined $calc[2];
+    $calc[4] = $date;
+    $calc[7] = $calc_level;
+    $ret = $dbh->update( "data", @calc );
+    return $ret;
 }
 
 # Matches calcs by match string
