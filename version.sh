@@ -1,6 +1,5 @@
 #!/bin/sh
 DIR=/home/michael/workspace/ninbot
-
 VER_FILE=$DIR/VERSION
 VERSION=$(cat $VER_FILE)
 echo $DIR
