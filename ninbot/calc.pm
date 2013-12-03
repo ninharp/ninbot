@@ -259,7 +259,7 @@ sub Handler {
         my $flag = $calc[6];
         my $clevel = $calc[7];
         if ( defined $name ) {
-            while ($author ne $from_nick or $flag !~ m/r/i and $level <= $clevel or $level != 10 ) {
+            while ($flag !~ m/r/i and $level <= $clevel) {
                 @calc = $calc_self->rand_Calc;
                 $nr = $calc[0];
 				$name = $calc[1];
