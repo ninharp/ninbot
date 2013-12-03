@@ -168,7 +168,7 @@ sub set_Flag {
         $calc[2] =~ s/\'/\\\'/g if defined $calc[2];
         $calc[4] = $date;
         $calc[6] = $calc_flag;
-        print Dumper(@calc);
+        #print Dumper(@calc);
         $ret = $dbh->update( "data", @calc );
         return $ret;
     }

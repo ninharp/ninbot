@@ -26,6 +26,13 @@ sub new {
     my $class = shift;
     my $self  = [];
     bless( $self, $class );
+    #$self->reload;
+    return $self;
+}
+
+sub reload {
+    my $class = shift;
+    my $self  = [];
     my $bot_self = &main::get_Self;
     my @users    = $bot_self->{_DBH}->select_all("user");
     foreach my $user_string (@users) {

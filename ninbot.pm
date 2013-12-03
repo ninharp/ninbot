@@ -66,7 +66,7 @@ sub log {
         }
         
         open( LOG, ">>ninbot.log" );
-        print LOG $date . ": (" . $level . ") " . $message . "\n";
+        print LOG $date . ": (" . $level . ") " . $message;
         close(LOG);
     }
 
@@ -294,9 +294,11 @@ sub schedule_Save {
         $irc  = $a;
         $self = $b;
     }
+    my $user = $self->{_USER};
     $irc->schedule( $self->{config}->{save_interval}, \&schedule_Save, $self );
     $self->log( 3, "<Main> Scheduled Saving!" );
     $self->save_Config;
+    $user->reload;
 }
 
 # Scheduled IP checking on dynamic IP machines
@@ -444,7 +446,7 @@ sub IRC_on_nick_change {
     my $self  = &main::get_Self;
     my $irc   = shift;
     my $event = shift;
-    print Dumper($event);
+    #print Dumper($event);
     my $oldnick = $event->{nick};
     my $newnick = $event->{args}[0];
     foreach my $chan ( keys $self->{_CHANNEL} ) {

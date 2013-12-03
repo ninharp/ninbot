@@ -35,7 +35,7 @@ sub new {
 
     bless( $self_user, $class );
     my $self = &main::get_Self;
-    $self->log( 4, "<User> Created new User object" );
+    $self->log( 4, "<User> Created new User object: $self_user->{-nickhandle}" );
     return $self_user;
 }
 
