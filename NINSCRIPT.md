@@ -218,6 +218,53 @@ In Allen Variablen können auch Platzhalter verwendet werden um zur Laufzeit Par
 *&parnick*  
 > Gibt entweder den Parameter oder den Nickname des Aufrufers aus
 
+*&uptime*
+> Gibt die komplette Uptime Zeichenkette aus
+
+*&updays*
+> Gibt die Uptime Tage aus
+
+*&uphours*
+> Gibt die Uptime Stunden aus
+
+*&upmins*
+> Gibt die Uptime Minuten aus
+
+*&cputemp*
+> Gibt die aktuelle CPU Temperatur aus
+
+*&cpuarch*
+> Gibt die CPU Architektur aus
+
+*&cpubmips*
+> Gibt die CPU BogoMips aus
+
+*&netdev*
+> Gibt das Netzwerkdevice aus
+
+*&nettxb*
+> Gibt die MB Anzahl an versendeten Paketen aus
+
+*&nettxp*
+> Gibt die Anzahl an versendeten Paketen aus
+
+*&netrxb*
+> Gibt die MB Anzahl an empfangenen Paketen aus
+
+*&netrxp*
+> Gibt die Anzahl an empfangenen Paketen aus
+
+*&memtotal*
+> Gibt den Gesamten Arbeitsspeicher in MB aus
+
+*&memfree*
+> Gibt den freien Arbeitsspeicher in MB aus
+
+*&memused*
+> Gibt den benutzen Arbeitsspeicher in MB aus
+
+*&procs*
+> Gibt die Anzahl laufender Prozesse aus
 
 *if_stack(NAME)*  
 > Gibt true zurück wenn Stack NAME definiert ist

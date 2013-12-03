@@ -226,21 +226,19 @@ sub _replace_Vars {
         $com =~ s/\&parnick/$nick/ig;
     }
     
-    ## Sysinfo section
-    # Always an if before you call system info cause it makes too much load
-    # to get the sysinfo data on every run if it dont get used!
+    ### Sysinfo section
+    
+    ## Perl Version
+    #$com =~ s/\&perl/$info->perl/ig;
     
     ## Uptime
-	# 1:01PM  up 573 days, 23:31, 1 user, load averages: 0.08, 0.04, 0.01
-	# 13:12:59 up 18:23,  5 users,  load average: 0,71, 0,72, 0,84
-	# 11:07:49 up 8 min,  1 user,  load average: 0,16, 0,13, 0,07
     if ($com =~ /\&(uptime|updays|uphours|upmins)/) {
 		my $uptimeinfo=`uptime`;
 		my $uptime_minutes = 0;
 		my $uptime_hours = 0;
 		my $uptime_days = 0;
 		#$string=~/.*?up (.*?,.*?),/;
-		if ($uptimeinfo =~ m/.*?up.(.*).days,.(.*?),/) {
+		if ($uptimeinfo =~ m/.*?up.(.*?).days,.(.*?),/) {
 			$uptime_days = $1;
 			($uptime_hours, $uptime_minutes) = split(/:/, $2);
 		}
@@ -260,10 +258,96 @@ sub _replace_Vars {
 		$com =~ s/\&updays/$uptime_days/ig;
 	}
 	
-	if ($com =~ /\&(uptime|updays|uphours|upmins)/) {
-			
+	## CPU Information
+	if ($com =~ /\&(cpuarch|cputemp|cpubmips)/) {
+		my $cpu_temp = `cat /sys/class/thermal/thermal_zone0/temp`;
+		$cpu_temp =~ s/^(\d\d)(\d\d\d)$/$1.$2/;
+		$cpu_temp = int(100 * ($cpu_temp) + 0.5) / 100;
+		
+		my $cpuinfo = `cat /proc/cpuinfo`;
+		my $cpu_arch = "none";
+		my $cpu_bmips = "none";
+		if ($cpuinfo =~ m/^Processor.*\:\ (.*)\nBogoMIPS.*\:\ (.*)\n/) {
+			$cpu_arch = $1;
+			$cpu_bmips = $2;
+		} elsif ($cpuinfo =~ m/model name/ig) {
+			$cpuinfo = `cat /proc/cpuinfo|grep "model name"`;
+			if ($cpuinfo =~ m/model name.*?\:.(.*)\n/ig) {
+				$cpu_arch = $1;
+			}
+			$cpuinfo = `cat /proc/cpuinfo|grep "bogomips"`;
+			if ($cpuinfo =~ m/bogomips.*?\:.(.*)\n/ig) {
+				$cpu_bmips = $1;
+			}
+		}
+		
+		$com =~ s/\&cputemp/$cpu_temp/ig;
+		$com =~ s/\&cpuarch/$cpu_arch/ig;
+		$com =~ s/\&cpubmips/$cpu_bmips /ig;
 	}
+	
+	## Memory Info
+	if ($com =~ /\&(memtotal|memfree|memused)/) {
+		my $meminfo = `cat /proc/meminfo`;
+		my $mem_total = "";
+		my $mem_free = "";
+		my $mem_used = "";
+		if ($meminfo =~ m/^MemTotal:.*?(.*)\ kB\nMemFree:.*?(.*)\ kB\n/) {
+			$mem_total = $1;
+			$mem_free = $2;
+			$mem_used = $mem_total - $mem_free;
+			$mem_total = int(100 * ($mem_total/1024) + 0.5) / 100;
+			$mem_free = int(100 * ($mem_free/1024) + 0.5) / 100;
+			$mem_used = int(100 * ($mem_used/1024) + 0.5) / 100;
+		}
+		
+		$com =~ s/\&memtotal/$mem_total/ig;
+		$com =~ s/\&memfree/$mem_free/ig;
+		$com =~ s/\&memused/$mem_used/ig;
+	}
+	
+	## Kernel Version
+	if ($com =~ /\&kernel/) {
+		my $uname = `uname -s -r -o`;
+		chop($uname);
+		$com =~ s/\&kernel/$uname/ig;
+	}
+	
+	## Processes
+	if ($com =~ /\&procs/) {
+		my $procsinfo = `ps auxc | wc -l`;
+		$procsinfo =~ /(\d+)/;
+		my $procs_count = $procsinfo - 3;
+		$com =~ s/\&procs/$procs_count/ig;
+	}
+	
+	## Network Stats
+	if ($com =~ /\&(netrxb|nettxb|netrxp|nettxp|netdev)/) {
+		my $iface = "wlan0";
+		my $netdev = `cat /proc/net/dev | egrep "($iface|face)" | sed -e 's/|/:/' -e 's/|/ /' | cut -d ":" -f 2 | tr -s " " " " | awk 'BEGIN {FS=" "} {for (i=1;i<=NF;i++){ if(i<9){arr[NR,i]="rx"\$i;}else{arr[NR,i]="tx"\$i;} if(big <= NF) big=NF; }} END {for(i=1;i<=big;i++){for(j=1;j<=NR;j++){ printf("%s\\t",arr[j,i]);}printf("\\n");}}' | sed -e 's/\\t\$//' -e 's/\\t/:/' -e 's/:[tr]x/:/'`;
 
+		my @net_info = split(/\n/, $netdev);
+		my $net_rxbytes = 0;
+		my $net_rxpackets = 0;
+		my $net_txbytes = 0;
+		my $net_txpackets = 0;
+		foreach my $tmp (@net_info) {
+			my ($name, $value) = split(/:/, $tmp);
+			if ($name eq "rxbytes") { $net_rxbytes = $value; }
+			if ($name eq "rxpackets") { $net_rxpackets = $value; }
+			if ($name eq "txbytes") { $net_txbytes = $value; }
+			if ($name eq "txpackets") { $net_txpackets = $value; }
+		}
+		if ($net_rxbytes > 0) { $net_rxbytes = int(100 * ($net_rxbytes/1024/1024) + 0.5) / 100; }
+		if ($net_txbytes > 0) { $net_txbytes = int(100 * ($net_txbytes/1024/1024) + 0.5) / 100; }
+		
+		$com =~ s/\&netrxb/$net_rxbytes/ig;
+		$com =~ s/\&netrxp/$net_rxpackets/ig;
+		$com =~ s/\&nettxb/$net_txbytes/ig;
+		$com =~ s/\&nettxp/$net_txpackets/ig;
+		$com =~ s/\&netdev/$iface/ig;
+	}
+	
     # if_stack(NAME)
     # Returns true if stack NAME is defined
     while ( $com =~ m/if_stack\W?\((.*?)\)/gi ) {
