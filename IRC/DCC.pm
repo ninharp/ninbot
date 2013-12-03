@@ -1,6 +1,6 @@
 #####################################################################
 #                                                                   #
-#   Net::IRC -- Object-oriented Perl interface to an IRC server     #
+#   IRC -- Object-oriented Perl interface to an IRC server     #
 #                                                                   #
 #   DCC.pm: An object for Direct Client-to-Client connections.      #
 #                                                                   #
@@ -34,7 +34,7 @@ use strict;
 
 
 # Methods that can be shared between the various DCC classes.
-package Net::IRC::DCC::Connection;
+package IRC::DCC::Connection;
 
 use Carp;
 use Socket;  # need inet_ntoa...
@@ -113,7 +113,7 @@ sub _getline {
             warn "recv() received 0 bytes in _getline, closing connection.\n"
                 if $self->{_debug};
             
-	    $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+	    $self->{_parent}->handler(IRC::Event->new('dcc_close',
 							   $self->{_nick},
 							   $self->{_socket},
 							   $self->{_type}));
@@ -128,7 +128,7 @@ sub _getline {
         warn "recv() returned undef, socket error in _getline()\n"
             if $self->{_debug};
 	
-        $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+        $self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -146,7 +146,7 @@ sub DESTROY {
     # live. Duplicate dcc_close events would be a Bad Thing.
     
     if ($self->{_socket}->opened) {
-	$self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+	$self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -170,13 +170,13 @@ sub peer {
 
 
 # Connection handling GETs
-package Net::IRC::DCC::GET;
+package IRC::DCC::GET;
 
 use IO::Socket;
 use Carp;
 use strict;
 
-@Net::IRC::DCC::GET::ISA = qw(Net::IRC::DCC::Connection);
+@IRC::DCC::GET::ISA = qw(IRC::DCC::Connection);
 
 sub new {
 
@@ -185,7 +185,7 @@ sub new {
     my ($sock, $fh);
 
     # get the address into a dotted quad
-    $address = &Net::IRC::DCC::Connection::fixaddr($address);
+    $address = &IRC::DCC::Connection::fixaddr($address);
     return if $port < 1024 or not defined $address or $size < 1;
 
     $fh = defined $handle ? $handle : IO::File->new(">$filename");
@@ -205,7 +205,7 @@ sub new {
 				  PeerAddr => "$address:$port" );
 
     if (defined $sock) {
-	$container->handler(Net::IRC::Event->new('dcc_open',
+	$container->handler(IRC::Event->new('dcc_open',
 						 $nick,
 						 $sock,
 						 'get',
@@ -258,7 +258,7 @@ sub parse {
 	carp ("Error writing to " . $self->{_filename} . ": $!");
 	close $self->{_fh};
 	$self->{_parent}->parent->removeconn($self);
-	$self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+	$self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -274,7 +274,7 @@ sub parse {
 	carp "Error writing to DCC GET socket: $!";
 	close $self->{_fh};
 	$self->{_parent}->parent->removeconn($self);
-	$self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+	$self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -290,7 +290,7 @@ sub parse {
     if ( $self->{_size} and $self->{_size} <= $self->{_bin} ) {
         close $self->{_fh};
         $self->{_parent}->parent->removeconn($self);
-        $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+        $self->{_parent}->handler(IRC::Event->new('dcc_close',
                                                        $self->{_nick},
                                                        $self->{_socket},
                                                        $self->{_type}));
@@ -298,7 +298,7 @@ sub parse {
         return;
     }
     
-    $self->{_parent}->handler(Net::IRC::Event->new('dcc_update',
+    $self->{_parent}->handler(IRC::Event->new('dcc_update',
                                                    $self->{_nick},
                                                    $self,
                                                    $self->{_type},
@@ -317,7 +317,7 @@ sub close {
     my ($self, $sock) = @_;
     $self->{_fh}->close;
     $self->{_parent}->parent->removeconn($self);
-    $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+    $self->{_parent}->handler(IRC::Event->new('dcc_close',
                                                   $self->{_nick},
                                                   $self->{_socket},
                                                   $self->{_type}));
@@ -337,8 +337,8 @@ sub close {
 
 
 # Connection handling SENDs
-package Net::IRC::DCC::SEND;
-@Net::IRC::DCC::SEND::ISA = qw(Net::IRC::DCC::Connection);
+package IRC::DCC::SEND;
+@IRC::DCC::SEND::ISA = qw(IRC::DCC::Connection);
 
 use IO::File;
 use IO::Socket;
@@ -400,7 +400,7 @@ sub new {
 
     bless $self, $class;
     
-    $sock = Net::IRC::DCC::Accept->new($sock, $self);
+    $sock = IRC::DCC::Accept->new($sock, $self);
 
     unless (defined $sock) {
         carp "Error in accept: $!";
@@ -436,7 +436,7 @@ sub parse {
 	      ($self->peer)[0] . " lost");
 	$self->{_fh}->close;
 	$self->{_parent}->parent->removefh($sock);
-        $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+        $self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -455,7 +455,7 @@ sub parse {
         # they've acknowledged the whole file,  we outtie
         $self->{_fh}->close;
         $self->{_parent}->parent->removeconn($self);
-        $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+        $self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -474,7 +474,7 @@ sub parse {
 	}
 	$self->{_fh}->close;
         $self->{_parent}->parent->removeconn($self);
-	$self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+	$self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -489,7 +489,7 @@ sub parse {
 	}
         $self->{_fh}->close;
         $self->{_parent}->parent->removeconn($self);
-        $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+        $self->{_parent}->handler(IRC::Event->new('dcc_close',
 						       $self->{_nick},
 						       $self->{_socket},
 						       $self->{_type}));
@@ -499,7 +499,7 @@ sub parse {
 
     $self->{_bout} += length($buf);
 
-    $self->{_parent}->handler(Net::IRC::Event->new('dcc_update',
+    $self->{_parent}->handler(IRC::Event->new('dcc_update',
 						   $self->{_nick},
 						   $self,
 						   $self->{_type},
@@ -519,8 +519,8 @@ sub parse {
 
 
 # handles CHAT connections
-package Net::IRC::DCC::CHAT;
-@Net::IRC::DCC::CHAT::ISA = qw(Net::IRC::DCC::Connection);
+package IRC::DCC::CHAT;
+@IRC::DCC::CHAT::ISA = qw(IRC::DCC::Connection);
 
 use IO::Socket;
 use Carp;
@@ -562,7 +562,7 @@ sub new {
 	
 	bless $self, $class;
 	
-        $sock = Net::IRC::DCC::Accept->new($sock, $self);
+        $sock = IRC::DCC::Accept->new($sock, $self);
 
 	unless (defined $sock) {
 	    carp "Error in DCC CHAT connect: $!";
@@ -571,14 +571,14 @@ sub new {
 
     } else {      # we're connecting
 
-        $address = &Net::IRC::DCC::Connection::fixaddr($address);
+        $address = &IRC::DCC::Connection::fixaddr($address);
 	return if $port < 1024 or not defined $address;
 
         $sock = new IO::Socket::INET( Proto    => "tcp",
 				      PeerAddr => "$address:$port");
 
         if (defined $sock) {
-	    $container->handler(Net::IRC::Event->new('dcc_open',
+	    $container->handler(IRC::Event->new('dcc_open',
 						     $nick,
 						     $sock,
 						     'chat',
@@ -630,13 +630,13 @@ sub parse {
 	return undef if $line eq "\012";
 	$self->{_bout} += length($line);
 
-	$self->{_parent}->handler(Net::IRC::Event->new('chat',
+	$self->{_parent}->handler(IRC::Event->new('chat',
 						       $self->{_nick},
 						       $self->{_socket},
 						       'chat',
 						       $line));
 	
-	$self->{_parent}->handler(Net::IRC::Event->new('dcc_update',
+	$self->{_parent}->handler(IRC::Event->new('dcc_update',
 						       $self->{_nick},
 						       $self,
 						       $self->{_type},
@@ -670,9 +670,9 @@ sub privmsg {
 
 
 # Sockets waiting for accept() use this to shoehorn into the select loop.
-package Net::IRC::DCC::Accept;
+package IRC::DCC::Accept;
 
-@Net::IRC::DCC::Accept::ISA = qw(Net::IRC::DCC::Connection);
+@IRC::DCC::Accept::ISA = qw(IRC::DCC::Connection);
 use Carp;
 use Socket;   # we use a lot of Socket functions in parse()
 use strict;
@@ -718,7 +718,7 @@ sub parse {
 	    $sock->close;
 	    $self->{_parent}->{_fh}->close;
 	    $self->{_parent}->{_parent}->parent->removefh($sock);
-	    $self->{_parent}->handler(Net::IRC::Event->new('dcc_close',
+	    $self->{_parent}->handler(IRC::Event->new('dcc_close',
 							   $self->{_nick},
 							   $self->{_socket},
 							   $self->{_type}));
@@ -730,7 +730,7 @@ sub parse {
     $self->{_parent}->{_parent}->parent->addconn($self->{_parent});
     $self->{_parent}->{_parent}->parent->removeconn($self);
 
-    $self->{_parent}->{_parent}->handler(Net::IRC::Event->
+    $self->{_parent}->{_parent}->handler(IRC::Event->
 					 new('dcc_open',
 					     $self->{_parent}->{_nick},
 					     $self->{_parent}->{_socket},
@@ -743,66 +743,3 @@ sub parse {
 
 
 1;
-
-
-__END__
-
-=head1 NAME
-
-Net::IRC::DCC - Object-oriented interface to a single DCC connection
-
-=head1 SYNOPSIS
-
-Hard hat area: This section under construction.
-
-=head1 DESCRIPTION
-
-This documentation is a subset of the main Net::IRC documentation. If
-you haven't already, please "perldoc Net::IRC" before continuing.
-
-Net::IRC::DCC defines a few subclasses that handle DCC CHAT, GET, and SEND
-requests for inter-client communication. DCC objects are created by
-C<Connection-E<gt>new_{chat,get,send}()> in much the same way that
-C<IRC-E<gt>newconn()> creates a new connection object.
-
-=head1 METHOD DESCRIPTIONS
-
-This section is under construction, but hopefully will be finally written up
-by the next release. Please see the C<irctest> script and the source for
-details about this module.
-
-=head1 AUTHORS
-
-Conceived and initially developed by Greg Bacon E<lt>gbacon@adtran.comE<gt> and
-Dennis Taylor E<lt>dennis@funkplanet.comE<gt>.
-
-Ideas and large amounts of code donated by Nat "King" Torkington E<lt>gnat@frii.comE<gt>.
-
-Currently being hacked on, hacked up, and worked over by the members of the
-Net::IRC developers mailing list. For details, see
-http://www.execpc.com/~corbeau/irc/list.html .
-
-=head1 URL
-
-Up-to-date source and information about the Net::IRC project can be found at
-http://netirc.betterbox.net/ .
-
-=head1 SEE ALSO
-
-=over
-
-=item *
-
-perl(1).
-
-=item *
-
-RFC 1459: The Internet Relay Chat Protocol
-
-=item *
-
-http://www.irchelp.org/, home of fine IRC resources.
-
-=back
-
-=cut

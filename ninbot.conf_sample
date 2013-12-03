@@ -6,6 +6,8 @@ irc_port   			6667
 irc_ident   		ninbot
 irc_nickname   		ninbot
 irc_email   		owner of ninbot
+irc_hostname		ip to bind to
+irc_ipv6		0
 <server>
     1   irc.hes.de.euirc.net
 </server>

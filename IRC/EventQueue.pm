@@ -24,7 +24,7 @@ sub enqueue {
   my $time = shift;
   my $content = shift;
 
-  my $entry = new Net::IRC::EventQueue::Entry($time, $content);
+  my $entry = new IRC::EventQueue::Entry($time, $content);
   $self->queue->{$entry->id} = $entry;
   return $entry->id;
 }
@@ -42,7 +42,7 @@ sub dequeue {
     $result = $self->queue->{$event};
     delete $self->queue->{$event};
   } else { # we got passed an actual event object
-    ref($event) eq 'Net::IRC::EventQueue::Entry'
+    ref($event) eq 'IRC::EventQueue::Entry'
         or die "Cannot delete event type of " . ref($event) . "!";
 
     $result = $self->queue->{$event->id};

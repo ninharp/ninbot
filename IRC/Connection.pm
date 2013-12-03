@@ -1,6 +1,6 @@
 #####################################################################
 #                                                                   #
-#   Net::IRC -- Object-oriented Perl interface to an IRC server     #
+#   IRC -- Object-oriented Perl interface to an IRC server     #
 #                                                                   #
 #   Connection.pm: The basic functions for a simple IRC connection  #
 #                                                                   #
@@ -15,12 +15,14 @@
 
 package IRC::Connection;
 
-use Net::IRC::Event;
-use Net::IRC::DCC;
+use IRC::Event;
+use IRC::DCC;
 use IO::Socket;
 use IO::Socket::INET;
+use IO::Socket::INET6;
 use Symbol;
 use Carp;
+use Data::Dumper;
 
 # all this junk below just to conditionally load a module
 # sometimes even perl is braindead...
@@ -41,15 +43,17 @@ use vars (
 
 
 # The names of the methods to be handled by &AUTOLOAD.
-my %autoloaded = ( 'ircname'  => undef,
+my %autoloaded = ( 
+		   'ircname'  => undef,
 		   'port'     => undef,
 		   'username' => undef,
 		   'socket'   => undef,
 		   'verbose'  => undef,
 		   'parent'   => undef,
-                   'hostname' => undef,
+           'hostname' => undef,
 		   'pacing'   => undef,
-                   'ssl'      => undef,
+           'ssl'      => undef,
+           'ipv6'	  => undef
 		 );
 
 # This hash will contain any global default handlers that the user specifies.
@@ -77,7 +81,8 @@ sub new {
     _maxlinelen =>  510,     # The RFC says we shouldn't exceed this.
     _lastsl     =>  0,
     _pacing     =>  0,       # no pacing by default
-    _ssl	=>  0,       # no ssl by default
+    _ssl	    =>  0,       # no ssl by default
+    _ipv6       =>  0,       # no ipv6 by default
     _format     => { 'default' => "[%f:%t]  %m  <%d>", },
   };
   
@@ -151,7 +156,7 @@ sub _add_generic_handler {
   foreach $ev (ref $event eq "ARRAY" ? @{$event} : $event) {
     # Translate numerics to names
     if ($ev =~ /^\d/) {
-      $ev = Net::IRC::Event->trans($ev);
+      $ev = IRC::Event->trans($ev);
       unless ($ev) {
         carp "Unknown event type in $real_name: $ev";
         return;
@@ -190,7 +195,7 @@ sub add_handler {
 # Hooks every event we know about...
 sub add_default_handler {
   my ($self, $ref, $rp) = @_;
-  foreach my $eventtype (keys(%Net::IRC::Event::_names)) {
+  foreach my $eventtype (keys(%IRC::Event::_names)) {
     $self->_add_generic_handler($eventtype, $ref, $rp, $self->{_handler}, 'add_default_handler');
   }
   return 1;
@@ -229,7 +234,11 @@ sub connect {
     $self->username($arg{'Username'}) if exists $arg{'Username'};
     $self->pacing($arg{'Pacing'}) if exists $arg{'Pacing'};
     $self->ssl($arg{'SSL'}) if exists $arg{'SSL'};
+    $self->ipv6($arg{'IPV6'}) if exists $arg{'IPV6'};
+    
   }
+  
+  #print Dumper($self)."\n";
   
   # Lots of error-checking claptrap first...
   unless ($self->server) {
@@ -267,8 +276,13 @@ sub connect {
                                        Proto     => "tcp",
                                        LocalAddr => $self->hostname,
                                        ));
-  } else {
-    
+  } elsif (!$self->ssl and $self->ipv6) {
+	$self->socket(IO::Socket::INET6->new(PeerAddr  => $self->server,
+                                        PeerPort  => $self->port,
+                                        Proto     => "tcp",
+                                        LocalAddr => $self->hostname,
+                                        ));
+  } else {  
     $self->socket(IO::Socket::INET->new(PeerAddr  => $self->server,
                                         PeerPort  => $self->port,
                                         Proto     => "tcp",
@@ -419,7 +433,7 @@ sub disconnect {
   $self->{_connected} = 0;
   $self->parent->removeconn($self);
   $self->socket( undef );
-  $self->handler(Net::IRC::Event->new( "disconnect",
+  $self->handler(IRC::Event->new( "disconnect",
                                        $self->server,
                                        '',
                                        @_  ));
@@ -470,7 +484,7 @@ sub handler {
     $ev = $event->type;
   } elsif (defined $event) {
     $ev = $event;
-    $event = Net::IRC::Event->new($event, '', '', '');
+    $event = IRC::Event->new($event, '', '', '');
   } else {
     croak "Not enough arguments to handler()";
   }
@@ -716,7 +730,7 @@ sub new_chat {
     ($init, $nick, $address, $port) = @_;
   }
   
-  Net::IRC::DCC::CHAT->new($self, $init, $nick, $address, $port);
+  IRC::DCC::CHAT->new($self, $init, $nick, $address, $port);
 }
 
 # Creates and returns a DCC GET object, analogous to IRC.pm's newconn().
@@ -756,7 +770,7 @@ sub new_get {
     return;                                # is this behavior OK?
   }
   
-  my $dcc = Net::IRC::DCC::GET->new( $self, $nick, $address, $port, $size,
+  my $dcc = IRC::DCC::GET->new( $self, $nick, $address, $port, $size,
                                      $name, $handle, $offset );
   
   $self->parent->addconn($dcc) if $dcc;
@@ -777,7 +791,7 @@ sub new_send {
     ($nick, $filename, $blocksize) = @_;
   }
   
-  Net::IRC::DCC::SEND->new($self, $nick, $filename, $blocksize);
+  IRC::DCC::SEND->new($self, $nick, $filename, $blocksize);
 }
 
 # Selects nick for this object or returns currently set nick.
@@ -870,7 +884,7 @@ sub parse {
    
    # Like the RFC says: "respond as quickly as possible..."
    if ($line =~ /^PING/) {
-     $ev = (Net::IRC::Event->new( "ping",
+     $ev = (IRC::Event->new( "ping",
                                   $self->server,
                                   $self->nick,
                                   "serverping",   # FIXME?
@@ -879,7 +893,7 @@ sub parse {
      
      # Had to move this up front to avoid a particularly pernicious bug.
    } elsif ($line =~ /^NOTICE/) {
-     $ev = Net::IRC::Event->new( "snotice",
+     $ev = IRC::Event->new( "snotice",
                                  $self->server,
                                  '',
                                  'server',
@@ -959,7 +973,7 @@ sub parse {
                $type eq "join"   or $type eq "part"  or
                $type eq "topic"  or $type eq "invite" ) {
        
-       $ev = Net::IRC::Event->new( $type,
+       $ev = IRC::Event->new( $type,
                                    $from,
                                    shift(@stuff),
                                    $type,
@@ -967,7 +981,7 @@ sub parse {
                                    );
      } elsif ($type eq "quit" or $type eq "nick") {
        
-       $ev = Net::IRC::Event->new( $type,
+       $ev = IRC::Event->new( $type,
                                    $from,
                                    $from,
                                    $type,
@@ -975,7 +989,7 @@ sub parse {
                                    );
      } elsif ($type eq "kick") {
        
-       $ev = Net::IRC::Event->new( $type,
+       $ev = IRC::Event->new( $type,
                                    $from,
                                    $stuff[1],
                                    $type,
@@ -983,13 +997,13 @@ sub parse {
                                    );
        
      } elsif ($type eq "kill") {
-       $ev = Net::IRC::Event->new($type,
+       $ev = IRC::Event->new($type,
                                   $from,
                                   '',
                                   $type,
                                   $line);   # Ahh, what the hell.
      } elsif ($type eq "wallops") {
-       $ev = Net::IRC::Event->new($type,
+       $ev = IRC::Event->new($type,
                                   $from,
                                   '',
                                   $type,
@@ -1007,7 +1021,7 @@ sub parse {
      $ev = $self->parse_num($line);
      
    } elsif ($line =~ /^:(\w+) MODE \1 /) {
-     $ev = Net::IRC::Event->new( 'umode',
+     $ev = IRC::Event->new( 'umode',
                                  $self->server,
                                  $self->nick,
                                  'server',
@@ -1019,7 +1033,7 @@ sub parse {
             NOTICE              # The server notice
             \b/x                # Some other crap, whatever...
             ) {
-     $ev = Net::IRC::Event->new( 'snotice',
+     $ev = IRC::Event->new( 'snotice',
                                  $self->server,
                                  '',
                                  'server',
@@ -1033,7 +1047,7 @@ sub parse {
        $self->disconnect( 'error', ($line =~ /(.*)/) );
        
      } else {
-       $ev = Net::IRC::Event->new( "error",
+       $ev = IRC::Event->new( "error",
                                    $self->server,
                                    '',
                                    'error',
@@ -1091,11 +1105,11 @@ sub parse_ctcp {
       my $handler = $prefix . lc $ctype;   # unit. value prob with $ctype
       
       $one =~ s/^$ctype //i;  # strip the CTCP type off the args
-      $self->handler(Net::IRC::Event->new( $handler, $from, $stuff,
+      $self->handler(IRC::Event->new( $handler, $from, $stuff,
                                            $handler, $one ));
     }
     
-    $self->handler(Net::IRC::Event->new($type, $from, $stuff, $type, $two))
+    $self->handler(IRC::Event->new($type, $from, $stuff, $type, $two))
         if $two;
   }
   return 1;
@@ -1128,7 +1142,7 @@ sub parse_num {
   
   $from = substr $from, 1 if $from =~ /^:/;
   
-  return Net::IRC::Event->new( $type,
+  return IRC::Event->new( $type,
                                $from,
                                '',
                                'server',
@@ -1305,7 +1319,7 @@ sub server {
   
   if (@_)  {
     # cases like "irc.server.com:6668"
-    if (index($_[0], ':') > 0) {
+    if (index($_[0], ':') == 1) {
       my ($serv, $port) = split /:/, $_[0];
       if ($port =~ /\D/) {
         carp "$port is not a valid port number in server()";
@@ -1315,7 +1329,7 @@ sub server {
       $self->port($port);
       
       # cases like ":6668"  (buried treasure!)
-    } elsif (index($_[0], ':') == 0 and $_[0] =~ /^:(\d+)/) {
+    } elsif (index($_[0], ':') == 0 and $_[0] =~ /^:(\d+)$/) {
       $self->port($1);
       
       # cases like "irc.server.com"
@@ -1602,66 +1616,3 @@ sub _default {
 }
 
 1;
-
-
-__END__
-
-=head1 NAME
-
-Net::IRC::Connection - Object-oriented interface to a single IRC connection
-
-=head1 SYNOPSIS
-
-Hard hat area: This section under construction.
-
-=head1 DESCRIPTION
-
-This documentation is a subset of the main Net::IRC documentation. If
-you haven't already, please "perldoc Net::IRC" before continuing.
-
-Net::IRC::Connection defines a class whose instances are individual
-connections to a single IRC server. Several Net::IRC::Connection objects may
-be handled simultaneously by one Net::IRC object.
-
-=head1 METHOD DESCRIPTIONS
-
-This section is under construction, but hopefully will be finally written up
-by the next release. Please see the C<irctest> script and the source for
-details about this module.
-
-=head1 AUTHORS
-
-Conceived and initially developed by Greg Bacon E<lt>gbacon@adtran.comE<gt> and
-Dennis Taylor E<lt>dennis@funkplanet.comE<gt>.
-
-Ideas and large amounts of code donated by Nat "King" Torkington E<lt>gnat@frii.comE<gt>.
-
-Currently being hacked on, hacked up, and worked over by the members of the
-Net::IRC developers mailing list. For details, see
-http://www.execpc.com/~corbeau/irc/list.html .
-
-=head1 URL
-
-Up-to-date source and information about the Net::IRC project can be found at
-http://netirc.betterbox.net/ .
-
-=head1 SEE ALSO
-
-=over
-
-=item *
-
-perl(1).
-
-=item *
-
-RFC 1459: The Internet Relay Chat Protocol
-
-=item *
-
-http://www.irchelp.org/, home of fine IRC resources.
-
-=back
-
-=cut
-

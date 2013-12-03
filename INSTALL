@@ -1,7 +1,6 @@
 CPAN Module Dependencies für Perl
 
 Config::General
-Net::IRC
 DBI
 DBD::mysql
 
@@ -12,7 +11,6 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 	Wir benötigen:
 		- Perl
 		- MySQL5 Client
-		- Perl CPAN Module Net::IRC
 		- Perl CPAN Module Config::General
 		- Perl CPAN Module DBI
 		- Perl CPAN Module DBD::mysql
@@ -21,12 +19,12 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 	
 	Die Perl CPAN Module werden wie folgt nacheinander installiert
 	
-	perl -MCPAN -e"install Net::IRC"
 	perl -MCPAN -e"install Config::General"
 	perl -MCPAN -e"install DBI"
 	perl -MCPAN -e"install DBD::mysql"
 	
 2. Wenn alles funktioniert hat und die Installation der Module abgeschlossen ist machen wir uns dadran den Bot zu konfigurieren
+
 	Dazu entpacken wir die ninbot tar.gz und wechseln in das Verzeichnis
 	
 	tar xzfv ninbot-0.83.tar.gz
@@ -41,19 +39,20 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 	Hier habe ich mal die Relevanten stellen aus der ninbot.conf zusammengestellt, die anderen Variablen in der Datei lassen wir wie sie sind.
 	
 	irc_botmode   1						- Muss der Bot das Botmode Flag haben? (euIRC Appliance)
-	irc_server   irc.hes.de.euirc.net	- IRC Server zu dem Verbunden wird
+	irc_server   irc.hes.de.euirc.net			- IRC Server zu dem Verbunden wird
 	irc_port   6667						- IRC Port auf dem Verbunden wird
 	irc_ident   ninbot					- IRC Ident information
 	irc_nickname   eG0N					- IRC Nickname des Bots
-	irc_email   owner ninharp			- IRC Realname des Bots (im euIRC den Nickname des Owners verwenden)
+	irc_email   owner ninharp				- IRC Realname des Bots (im euIRC den Nickname des Owners verwenden)
+	irc_hostname	ip to bind to				- IRC Host oder IP über den der Bot sich verbindet
+	irc_ipv6	1					- IPv6 Modus ein oder ausschalten
 	<server>
-		1   irc.hes.de.euirc.net		- IRC Server zu dem Verbunden wird (Sorry für die Redundanz, wird noch geaendert)
+		1   irc.hes.de.euirc.net			- IRC Server zu dem Verbunden wird (Sorry für die Redundanz, wird noch geaendert)
 	</server>
-	daemon   0							- Soll der Bot als Daemonprozess im Hintergrund laufen?
+	daemon   0						- Soll der Bot als Daemonprozess im Hintergrund laufen?
 	sql_user   root						- SQL Benutzername
-	sql_password   giq3byna				- SQL Passwort
-	sql_dsn   dbi:mysql:ninbot:localhost:3306
-										- SQL Verbindungsstring (dbi:mysql:DBNAME:DBSERVER:DBPORT)
+	sql_password   giq3byna					- SQL Passwort
+	sql_dsn   dbi:mysql:ninbot:localhost:3306		- SQL Verbindungsstring (dbi:mysql:DBNAME:DBSERVER:DBPORT)
 	
 	command_trigger   !					- Kommandotrigger (Standard ist !)
 	
