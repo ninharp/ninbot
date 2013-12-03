@@ -164,15 +164,18 @@ sub save_Config {
 sub setup_IRC {
     my $self = shift;
     $self->read_Config;
+    #print Dumper($self)."\n";
     my $IRC = $self->{_IRC};
-    $self->{conn} = $IRC->newconn(
-        Nick     => $self->{config}->{irc_nickname},
-        Server   => $self->{config}->{irc_server},
-        Port     => $self->{config}->{irc_port},
-        Username => $self->{config}->{irc_ident},
-        Ircname  => $self->{config}->{irc_email}
+    $self->{conn}  = $IRC->newconn(
+        Nick      => $self->{config}->{irc_nickname},
+        Server    => "$self->{config}->{irc_server}",
+        Port      => $self->{config}->{irc_port},
+        Username  => $self->{config}->{irc_ident},
+        Ircname   => $self->{config}->{irc_email},
+        LocalAddr => $self->{config}->{irc_hostname},
+        IPV6	  => $self->{config}->{irc_ipv6}
     );
-    $self->{ip} = $self->get_IP;
+    #$self->{ip} = $self->get_IP;
     $self->schedule_Save;
 
     #  $self->schedule_checkIP; # Nur bei dynamischen Verbindungen
@@ -192,19 +195,19 @@ sub start_IRC {
 sub setup_Handler {
     my $self = shift;
     my $conn = $self->{conn};
-    if (    $conn->add_global_handler( '376', \&IRC_on_connect )
-        and $conn->add_global_handler( 'disconnect', \&IRC_on_disconnect )
-        and $conn->add_global_handler( '433',        \&IRC_on_nick_in_use )
-        and $conn->add_global_handler( 'join',       \&IRC_on_join )
-        and $conn->add_global_handler( 'part',       \&IRC_on_part )
-        and $conn->add_global_handler( 'quit',       \&IRC_on_quit )
-        and $conn->add_global_handler( 'nick',       \&IRC_on_nick_change )
-        and $conn->add_global_handler( 'public',     \&IRC_on_public )
-        and $conn->add_global_handler( 'kick',       \&IRC_on_kick )
-        and $conn->add_global_handler( 'msg',        \&IRC_on_private )
-        and $conn->add_global_handler( 'invite',     \&IRC_on_invite )
-        and $conn->add_global_handler( 'cversion',   \&IRC_on_ctcp_version )
-        and $conn->add_global_handler( 'namreply',   \&IRC_on_names_reply ) )
+    if (    $conn->add_global_handler( 'endofmotd',     \&IRC_on_connect )
+        and $conn->add_global_handler( 'disconnect',    \&IRC_on_disconnect )
+        and $conn->add_global_handler( 'nicknameinuse', \&IRC_on_nick_in_use )
+        and $conn->add_global_handler( 'join',          \&IRC_on_join )
+        and $conn->add_global_handler( 'part',          \&IRC_on_part )
+        and $conn->add_global_handler( 'quit',          \&IRC_on_quit )
+        and $conn->add_global_handler( 'nick',          \&IRC_on_nick_change )
+        and $conn->add_global_handler( 'public',        \&IRC_on_public )
+        and $conn->add_global_handler( 'kick',          \&IRC_on_kick )
+        and $conn->add_global_handler( 'msg',           \&IRC_on_private )
+        and $conn->add_global_handler( 'invite',        \&IRC_on_invite )
+        and $conn->add_global_handler( 'cversion',      \&IRC_on_ctcp_version )
+        and $conn->add_global_handler( 'namreply',      \&IRC_on_names_reply ) )
     {
         return 1;
     }
