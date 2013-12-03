@@ -225,6 +225,44 @@ sub _replace_Vars {
         $com =~ s/\&param//ig;
         $com =~ s/\&parnick/$nick/ig;
     }
+    
+    ## Sysinfo section
+    # Always an if before you call system info cause it makes too much load
+    # to get the sysinfo data on every run if it dont get used!
+    
+    ## Uptime
+	# 1:01PM  up 573 days, 23:31, 1 user, load averages: 0.08, 0.04, 0.01
+	# 13:12:59 up 18:23,  5 users,  load average: 0,71, 0,72, 0,84
+	# 11:07:49 up 8 min,  1 user,  load average: 0,16, 0,13, 0,07
+    if ($com =~ /\&(uptime|updays|uphours|upmins)/) {
+		my $uptimeinfo=`uptime`;
+		my $uptime_minutes = 0;
+		my $uptime_hours = 0;
+		my $uptime_days = 0;
+		#$string=~/.*?up (.*?,.*?),/;
+		if ($uptimeinfo =~ m/.*?up.(.*).days,.(.*?),/) {
+			$uptime_days = $1;
+			($uptime_hours, $uptime_minutes) = split(/:/, $2);
+		}
+		if ($uptimeinfo =~ m/.*?up.(.*?),/) {
+			$uptime_days = 0;
+			($uptime_hours, $uptime_minutes) = split(/:/, $1);
+		}
+		if ($uptimeinfo =~ m/.*?up.(.*).min,/) {
+			$uptime_days = 0;
+			$uptime_hours = 0;
+			$uptime_minutes = $1;
+		}
+		my $uptime = $uptime_days." Days ".$uptime_hours." Hours ".$uptime_minutes." Minutes";
+		$com =~ s/\&uptime/$uptime/ig;
+		$com =~ s/\&upmins/$uptime_minutes/ig;
+		$com =~ s/\&uphours/$uptime_hours/ig;
+		$com =~ s/\&updays/$uptime_days/ig;
+	}
+	
+	if ($com =~ /\&(uptime|updays|uphours|upmins)/) {
+			
+	}
 
     # if_stack(NAME)
     # Returns true if stack NAME is defined

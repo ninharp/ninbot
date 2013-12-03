@@ -21,7 +21,7 @@ use warnings;
 use strict;
 use Config::General qw(ParseConfig SaveConfig);
 use Data::Dumper;
-use Net::IRC;
+use IRC;
 use DBI;
 use ninbot::mysql;
 use ninbot::textdb;
@@ -45,7 +45,7 @@ sub new {
     $self->{_CHANNELS} = {};
 
     # $self->{_DBH}; # General Database Handler (backend independent)
-    $self->{_IRC} = new Net::IRC;
+    $self->{_IRC} = new IRC;
 
     #  $self->{_PARTYLINE} = new ninbot::partyline;
     return $self;
