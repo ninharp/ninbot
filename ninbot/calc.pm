@@ -56,7 +56,7 @@ sub rand_Calc {
         $rand = int( rand( scalar(@entries) ) );
     }
     my $return = $entries[$rand];
-    print $return."\n\n\n";
+    #print $return."\n\n\n";
     my @ret = split( /;;;/, $return );
     if ( $ret[4] =~ m/\n/ ) {
         $ret[4] =~ s/\n//g;
@@ -259,8 +259,16 @@ sub Handler {
         my $flag = $calc[6];
         my $clevel = $calc[7];
         if ( defined $name ) {
-            while ( $flag !~ m/r/i and $level >= $clevel ) {
+            while ($author ne $from_nick or $flag !~ m/r/i and $level <= $clevel or $level != 10 ) {
                 @calc = $calc_self->rand_Calc;
+                $nr = $calc[0];
+				$name = $calc[1];
+				$value = $calc[2];
+				$author = $calc[3];
+				$date = $calc[4];
+				$changed = $calc[5];
+				$flag = $calc[6];
+				$clevel = $calc[7];
             }
             ( $nr, $name, $value, $author, $date, $changed, $flag, $clevel ) = @calc;
             
@@ -304,7 +312,7 @@ sub Handler {
                 $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name'" );
             }
             else {
-                if ( $flag =~ m/r/i or $author eq $from_nick and $level >= $clevel ) {
+                if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 ) {
                     if ( length( $calc[1] ) >= 395 ) {
                         $value = substr( $value, 0, 395 ) . "...";
                     }
@@ -347,8 +355,9 @@ sub Handler {
             $acc_calc[2] = $from_nick.",";
             $isnew = 1;
         }
+        my $clevel = $acc_calc[7];
         my ( $author, undef ) = split( /,/, $acc_calc[2] );
-        if ( $acc_calc[6] =~ m/w/i or $author eq $from_nick and $level >= $acc_calc[7] ) {
+        if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 ) {
 			$calc_self->del_Calc($calc_name);
 			my $calc = $calc_self->add_Calc( $calc_name, $from_nick, $acc_calc[7], $acc_calc[6], $calc_text );
 			if ( $calc <= 0 ) {
@@ -377,19 +386,17 @@ sub Handler {
           if $calc_name =~ m/=/;
         my @acc_calc = $calc_self->get_Calc($calc_name);
         if ( !defined $acc_calc[1] ) {
-            $conn->privmsg( $from_channel,
-                "Kein Calc fuer '$calc_name' in der Datenbank!" );
+            $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name' in der Datenbank!" );
         }
         else {
             my ( $author, undef ) = split( /,/, $acc_calc[2] );
-            if ( ($acc_calc[6] =~ m/w/i) or ($author eq $from_nick and $level >= $acc_calc[7]) or ($level >= 10) )
-            {
+            my $clevel = $acc_calc[7];
+             if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 ) {
                 my $calc = $calc_self->del_Calc($calc_name);
                 $conn->privmsg( $from_channel, "Calc '$calc_name' gelöscht!" );
             }
             else {
-                $conn->privmsg( $from_channel,
-                    "Calc '$calc_name' ist schreibgeschützt!" );
+                $conn->privmsg( $from_channel, "Calc '$calc_name' ist schreibgeschützt!" );
             }
         }
         $self->log( 3, "<Calc> Remove entry $calc_name from $from_nick($level) on $from_channel!" );
@@ -413,7 +420,7 @@ sub Handler {
             $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name' in der Datenbank!" );
         }
         else {
-            if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel )
+            if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 )
             {
                 if ( my $ret = $calc_self->set_Flag( $calc_name, $calc_flag ) )
                 {
@@ -451,7 +458,7 @@ sub Handler {
             $conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name' in der Datenbank!" );
         }
         else {
-            if ( $author eq $from_nick or $author =~ m/w/i and $level >= $clevel ) {
+            if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 ) {
                 if ( $calc_level <= $level ) {
                     if ( my $ret = $calc_self->set_Level( $calc_name, $calc_level ) )
                     {

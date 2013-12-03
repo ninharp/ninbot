@@ -228,9 +228,6 @@ sub _replace_Vars {
     
     ### Sysinfo section
     
-    ## Perl Version
-    #$com =~ s/\&perl/$info->perl/ig;
-    
     ## Uptime
     if ($com =~ /\&(uptime|updays|uphours|upmins)/) {
 		my $uptimeinfo=`uptime`;

@@ -29,7 +29,6 @@ use ninbot::calc;
 use ninbot::users;
 use ninbot::channel;
 use ninbot::interpreter;
-
 #use ninbot::partyline; # Added later
 
 sub new {
@@ -615,7 +614,7 @@ sub IRC_on_public {
             $self->log( 3, "<Main:IRC:pub> Searching Script for Command '$command' [$param]" );
             my @calc = $calc_self->get_Calc( "com-" . $command );
             if ( defined $calc[2] ) {
-                my ( $nr, $calc_name, $calc_text, $calc_nick, $calc_date, $calc_changed, $calc_mode, $calc_flag, $calc_level ) = @calc;
+                my ( $nr, $calc_name, $calc_text, $calc_nick, $calc_date, $calc_changed, $calc_flag, $calc_level ) = @calc;
                 $calc_level = 0 if (!defined $calc_level);
                 $self->log( 4, "<Main:IRC:pub> Found Calc Command for '$command'" );
                 if ( $calc_text =~ m/\{(.*)\}/i ) {
