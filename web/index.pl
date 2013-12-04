@@ -299,6 +299,33 @@ sub show_com() {
 	print end_html;
 }
 
+sub show_stats() {
+	print header;
+	print start_html('ninbot Calc Database Editor')."\n";
+	print h1('ninbot Statistic Table');
+	print '<a href="?">Back</a>';
+	print '<table width="100%" align="center" border="0" cellspacing="0" cellpadding="10">
+			<th>
+			<td><b>Name</b></td>
+			<td><b>Wert</b></td>
+			</th>
+			<tr><td colspan="3"><hr></td></tr>';
+	my $sth = $dbh->prepare("SELECT * FROM stats ORDER BY name ASC");
+	if ( $sth->execute ) {
+		while ( my @row = $sth->fetchrow_array() ) {
+			my $name = $row[0];
+			my $value = $row[1];
+			print '<tr>
+				<td>&nbsp;</td>
+				<td width="39%">'.$name.'</td>
+				<td width="60%">'.$value.'</td>
+				<tr><td colspan="3"><hr></td></tr>';
+		}
+	}
+	print "</table>";
+	print end_html;
+}
+
 sub dump_database() {
 	print "DROP TABLE IF EXISTS `data`;
 
@@ -444,6 +471,49 @@ sub edit_calc() {
 	print end_html;
 }
 
+sub new_calc() {
+	print header;
+	print start_html('ninbot Calc Database Editor');
+	print h1('ninbot Calc DB Editor');
+	print '<a href="?">Back</a>';
+	my $a = "calc";
+	$a = param('a') if defined param('a');
+	print '<form action="?" method="POST">';
+	print '<input type="hidden" name="a" value="'.$a.'" />';
+	print '<input type="hidden" name="m" value="s" />';
+	print '<table border="1">';
+	print '<tr><td>Name: <input type="text" name="name" maxlength="100" value="';
+	print "com-" if ($a eq "com");
+	print "data-var-" if ($a eq "var");
+	print "data-nvar-" if ($a eq "nvar");
+	print "data-" if ($a eq "data");
+	print '"/></td>';
+	print '<td>Author: <input type="text" name="author" maxlength="100" value=""/></td></tr>';
+	print '<tr><td colspan="2">Inhalt:<br /><textarea name="value" cols="80" rows="10">';
+	print '{ say "Dein Text"; }' if ($a eq "com");
+	print '</textarea></td></tr>';
+	print '<tr><td>Flags: <select name="flag" size="1">';
+	print '<option value="rw" selected>rw</option>';
+	print '<option value="ro">ro</option>';
+	print '</select></td>';
+	print '<td>Level: <select name="level" size="1">';
+	print '<option value="0" selected>0</option>';
+	print '<option value="1">1</option>';
+	print '<option value="2">2</option>';
+	print '<option value="3">3</option>';
+	print '<option value="4">4</option>';
+	print '<option value="5">5</option>';
+	print '<option value="6">6</option>';
+	print '<option value="7">7</option>';
+	print '<option value="8">8</option>';
+	print '<option value="9">9</option>';
+	print '<option value="10">10</option>';
+	print '</select></td></tr>';
+	print '<tr><td>&nbsp;</td><td align="right"><input type="submit" name="save" value="Create"/></td></tr>';
+	print '</table></form>';
+	print end_html;
+}
+
 sub ask_del_calc() {
 	print header;
 	print start_html('ninbot Calc Database Editor')."\n";
@@ -491,7 +561,7 @@ sub save_calc() {
 	print start_html('ninbot Calc Database Editor')."\n";
 	print h1('ninbot Command DB Editor');
 	print '<a href="?">Back</a>';
-	my $nr = 1;
+	my $nr = "";
 	my $a = "calc";
 	my $name = "";
 	my $author = "";
@@ -509,13 +579,27 @@ sub save_calc() {
 	$level = param('level') if defined param('level');
 	$value = param('value') if defined param('value');
 	print '<table border="1" width="100%" align="center">';
-	if ($name ne "" and $value ne "") {
+	if ($name ne "" and $value ne "" and $nr ne "") {
 		my $sth = $dbh->prepare("UPDATE data SET name='$name',value='$value',author='$author',time='$ctime',changed='$changed',flag='$flag',level='$level' WHERE nr='$nr'");
 		my $ret = $sth->execute;
 		if ($ret == 1) {
 			print '<tr><td align="center">Successfully edited entry number '.$nr.'!</td></tr>';
 		} else {
 			print '<tr><td align="center">An error occured on editing number '.$nr.'!</td></tr>';
+		}
+	} else {
+		my $sth = $dbh->prepare("SELECT * FROM data WHERE name LIKE '$name'");
+		my $ret = $sth->execute;
+		if ($ret != 1) {
+			$sth = $dbh->prepare("INSERT INTO data (name, value, author, time, changed, flag, level) VALUES('$name','$value','$author','$ctime','$changed','$flag','$level')");
+			$ret = $sth->execute;
+			if ($ret == 1) {
+				print '<tr><td align="center">Successfully added new entry!</td></tr>';
+			} else {
+				print '<tr><td align="center">An error occured on adding new data!</td></tr>';
+			}
+		} else {
+				print '<tr><td align="center">An error occured on adding new data!<br />Already a data entry with name '.$name.' in the database</td></tr>'; 
 		}
 	}
 	print '<tr><td align="center"><a href="?a='.$a.'">Back to list</a></td></tr>';
@@ -527,11 +611,12 @@ sub print_index() {
 	print header;
 	print start_html('ninbot Database Editor')."\n";
 	print h1('ninbot Database Editor');
-	print "<a href='?a=calc'>Calc Editor</a>".br();
-	print "<a href='?a=com'>Command Editor</a>".br();
-	print "<a href='?a=var'>Variables Editor</a>".br();
-	print "<a href='?a=nvar'>Nick Variables Editor</a>".br();
-	print "<a href='?a=data'>Data Calc Editor</a>".br();
+	print "<a href='?a=calc'>Calc Editor</a>&nbsp;<a href='?a=calc&m=n'>New</a>".br();
+	print "<a href='?a=com'>Command Editor</a>&nbsp;<a href='?a=com&m=n'>New</a>".br();
+	print "<a href='?a=var'>Variables Editor</a>&nbsp;<a href='?a=var&m=n'>New</a>".br();
+	print "<a href='?a=nvar'>Nick Variables Editor</a>&nbsp;<a href='?a=nvar&m=n'>New</a>".br();
+	print "<a href='?a=data'>Data Calc Editor</a>&nbsp;<a href='?a=data&m=n'>New</a>".br().br();
+	print "<a href='?a=stats'>Display Statistic Table</a>".br();
 	print end_html;
 }
 
@@ -545,6 +630,7 @@ if ( !defined param('m') and defined param('a') ) {
      /^var/i and do { show_var(); last CASE; };
      /^nvar/i and do { show_nvar(); last CASE; };
      /^com/i and do  { show_com(); last CASE; };
+     /^stats/i and do { show_stats(); last CASE; };
      /^dump/i and do { dump_database(); last CASE; };
      # default
      show_calc();
@@ -557,6 +643,7 @@ if ( !defined param('m') and defined param('a') ) {
      /^d/i and do { ask_del_calc(); last CASE; };
      /^x/i and do { del_calc(); last CASE; };
      /^s/i and do { save_calc(); last CASE; };
+     /^n/i and do { new_calc(); last CASE; };
      # default
      show_calc();
 	}

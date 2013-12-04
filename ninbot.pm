@@ -29,6 +29,7 @@ use ninbot::calc;
 use ninbot::users;
 use ninbot::channel;
 use ninbot::interpreter;
+use ninbot::stats;
 #use ninbot::partyline; # Added later
 
 sub new {
@@ -45,8 +46,8 @@ sub new {
 
     # $self->{_DBH}; # General Database Handler (backend independent)
     $self->{_IRC} = new IRC;
-
     #  $self->{_PARTYLINE} = new ninbot::partyline;
+    
     return $self;
 }
 
@@ -89,7 +90,7 @@ sub read_Config {
     my %config = ParseConfig( -ConfigFile => $self->{_CONFIG}, -AutoTrue => 1 );
     $self->{config} = \%config;
     $self->{_DEBUG} = $config{debug} if defined $config{debug};
-
+    
     # Choosing Calc Database Backend
     if ( !defined $self->{_DBH} ) {
         if ( $self->{config}->{calc_backend} =~ m/^mysql$/i ) {
@@ -116,6 +117,9 @@ sub read_Config {
     $self->{_USER}   = new ninbot::users;          # Loading Users Module
     $self->{_CALC}   = new ninbot::calc;           # Loading Calc Module
     $self->{_SCRIPT} = new ninbot::interpreter;    # Loading Script Module
+    $self->{_STATS}  = new ninbot::stats;		   # Loading Stats Module
+
+    
     my %server = %{ $config{server} };
     $self->{_SERVER} = keys %server;
     my @server = $self->{_SERVER};
@@ -144,6 +148,8 @@ sub read_Config {
 			print STDOUT "Error: $! => ./$self->{config}->{channel_file}\nDo you have appropriate rights?!\n";
 		}
     }
+    
+    $self->log(2, "<Main> Using IPv6 for Connections!") if ($self->{config}->{irc_ipv6} == 1);
     return $ret;
 }
 
@@ -377,6 +383,8 @@ sub IRC_on_invite {
     my $chan   = $event->{args}->[0];
     my $nick   = $event->{nick};
     my $mynick = $self->{config}->{irc_nickname};
+    my $stats  = $self->{_STATS};
+    $stats->inc_name("irc-invite");
     if ( !$self->check_bannedChan($chan) ) {
         $self->log( 2, "<Main:IRC> " . $nick . " has invited me to join " . $chan . "!\n" );
         $self->{_CHANNEL}->{$chan} = ninbot::channel->new( '_NAME' => $chan );
@@ -405,8 +413,11 @@ sub IRC_on_join {
     my $self  = &main::get_Self;
     my $irc   = shift;
     my $event = shift;
+    my $stats = $self->{_STATS};
+    $stats->inc_name("irc-join");
     if ( defined $self->{_CHANNEL}->{ $event->{to}[0] } ) {
         $self->{_CHANNEL}->{ $event->{to}[0] }->add_name( $event->{nick} );
+		$stats->inc_name("irc-chan-".$event->{to}[0]."-join");
     }
     $self->handle_Event( "onjoin", $event )
       if $irc->{_nick} !~ m/$event->{nick}/i;
@@ -421,11 +432,14 @@ sub IRC_on_part {
     my $self  = &main::get_Self;
     my $irc   = shift;
     my $event = shift;
+    my $stats = $self->{_STATS};
+    $stats->inc_name("irc-part");
     if ( $event->{nick} eq $irc->{_nick} ) {
         $self->{_CHANNEL}->{ $event->{to}[0] }->close_channel();
     }
     else {
         $self->{_CHANNEL}->{ $event->{to}[0] }->del_name( $event->{nick} );
+        $stats->inc_name("irc-chan-".$event->{to}[0]."-part");
     }
     $self->log( 4, "<Main:IRC> onPart Event received from " . $event->{nick} . "." );
 }
@@ -435,8 +449,11 @@ sub IRC_on_quit {
     my $self  = &main::get_Self;
     my $irc   = shift;
     my $event = shift;
+    my $stats = $self->{_STATS};
+    $stats->inc_name("irc-quit");
     foreach my $chan ( keys $self->{_CHANNEL} ) {
         $self->{_CHANNEL}->{$chan}->del_name( $event->{nick} );
+        $stats->inc_name("irc-chan-".$event->{to}[0]."-quit");
     }
     $self->log( 4, "<Main:IRC> onQuit Event received from " . $event->{nick} . "." );
 }
@@ -446,6 +463,8 @@ sub IRC_on_nick_change {
     my $self  = &main::get_Self;
     my $irc   = shift;
     my $event = shift;
+    my $stats = $self->{_STATS};
+    $stats->inc_name("irc-nick");
     #print Dumper($event);
     my $oldnick = $event->{nick};
     my $newnick = $event->{args}[0];
@@ -495,6 +514,7 @@ sub IRC_on_public {
     my $calc_self = $self->{_CALC};
     my $user      = $self->{_USER};
     my $mute      = $self->{_MUTE};
+    my $stats	  = $self->{_STATS};
     my $irc       = shift;
     my $msg_hash  = shift;
     my $tmp_hash  = $msg_hash;
@@ -513,12 +533,14 @@ sub IRC_on_public {
         $calc_self->Handler( $from, $from_nick, $from_channel, $message );
     }
     elsif ( $message =~ m/^${trigger}op$/i ) {
+		$stats->inc_name("com-op");
         if ( $user->is_Active($from) ) {
             $conn->mode( $from_channel . " +o " . $from_nick );
             $self->log( 3, "<Main:IRC:pub> Opping " . $from_nick . " on channel " . $from_channel );
         }
     }
     elsif ( $message =~ m/^${trigger}ban$/i ) {
+		$stats->inc_name("com-ban");
         if ( defined $self->{_CHANNEL}->{$from_channel} ) {
             if ( !$self->{_CHANNEL}->{$from_channel}->is_PermChan($from_channel)
               )
@@ -537,6 +559,7 @@ sub IRC_on_public {
         }
     }
     elsif ( $message =~ m/^${trigger}part$/i ) {
+		$stats->inc_name("com-part");
         if ( !$self->{_CHANNEL}->{$from_channel}->is_PermChan($from_channel) ) {
             $conn->privmsg( $from_channel, "OK, " . $from_nick . ", weg bin ich! cu" );
             $conn->part($from_channel);
@@ -547,6 +570,7 @@ sub IRC_on_public {
         }
     }
     elsif ( $message =~ m/^${trigger}join\ (.*)/i ) {
+		$stats->inc_name("com-join");
         my $join_chan = $1;
         if ( $level >= 4 ) {
 
@@ -561,6 +585,7 @@ sub IRC_on_public {
         }
     }
     elsif ( $message =~ m/^${trigger}mute$/i ) {
+		$stats->inc_name("com-mute");
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
             $self->log( 2, "<Main:IRC:pub> Request from $from_nick to be mute in $from_channel for 2 minutes!" );
             $self->{_CHANNEL}->{$from_channel}->mute();
@@ -580,6 +605,7 @@ sub IRC_on_public {
         }
     }
     elsif ( $message =~ m/^${trigger}timer\ (\d*)\ (.*)/i ) {
+		$stats->inc_name("com-timer");
         my $zeit         = $1 * 60;
         my $what         = $2;
         my $timer_script = sub {
@@ -592,6 +618,7 @@ sub IRC_on_public {
         $conn->schedule( $zeit, $timer_script, $from_channel, $from_nick, $what );
     }
     elsif ( $message =~ m/^${trigger}eval\W+(.*)/i ) {
+		$stats->inc_name("com-eval");
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
             $self->{_SCRIPT}->{command} = "eval";
             $self->{_SCRIPT}->parse_Script( $from_nick, $from_channel, $1, $level );
@@ -616,6 +643,8 @@ sub IRC_on_public {
             $self->log( 3, "<Main:IRC:pub> Searching Script for Command '$command' [$param]" );
             my @calc = $calc_self->get_Calc( "com-" . $command );
             if ( defined $calc[2] ) {
+				$stats->inc_name("_TRIGGER");
+				$stats->inc_name("com-$command");
                 my ( $nr, $calc_name, $calc_text, $calc_nick, $calc_date, $calc_changed, $calc_flag, $calc_level ) = @calc;
                 $calc_level = 0 if (!defined $calc_level);
                 $self->log( 4, "<Main:IRC:pub> Found Calc Command for '$command'" );
@@ -644,10 +673,10 @@ sub IRC_on_public {
                     $link = "com-".$link if ($link !~ m/^com-/i);
                     if ( $link =~ m/^com-/i ) {
                         my @link_calc = $calc_self->get_Calc($link);
-                        my ( $link_name, $link_script, undef, undef, undef, undef, undef, undef ) = @link_calc;
+                        my ( $nr, $link_name, $link_script, undef, undef, undef, undef, undef ) = @link_calc;
                         if ( $link_script =~ m/\{(.*)\}/i ) {
                             my $link_script = $1;
-                            if ( $level >= $link_calc[7] ) {
+                            if ( $level >= $link_calc[7] and $link_calc[6] =~ /r/ ) {
                                 $self->{_SCRIPT}->parse_Script( $from_nick, $from_channel, $link_script, $level, $param );
                             }
                         }
@@ -677,6 +706,7 @@ sub IRC_on_private {
     my $irc          = shift;
     my $msg_hash     = shift;
     my $user         = $self->{_USER};
+    my $stats		 = $self->{_STATS};
     my %msg_hash     = %{$msg_hash};
     my $command      = @{ $msg_hash{args} }[0];
     my $from_nick    = $msg_hash{nick};
@@ -691,6 +721,7 @@ sub IRC_on_private {
     }
     else {
         if ( $command =~ m/^join\ (.*)/i ) {
+			$stats->inc_name("priv-join");
             if ( $level >= 4 ) {
                 $self->log( 3, "<Main:IRC:priv> PrivCmd Join $1 from $from_nick" );
                 $self->{_CHANNEL}->{$1} = ninbot::channel->new( '_NAME' => $1 );
@@ -703,10 +734,12 @@ sub IRC_on_private {
             }
         }
         elsif ( $command =~ m/^part\ (.*)/i ) {
+			$stats->inc_name("priv-part");
             $self->log( 3, "<Main:IRC:priv> PrivCmd Parting $1 from $from_nick" );
             $irc->part($1) if !$self->{_CHANNEL}->is_PermChan($1);
         }
         elsif ( $command =~ m/^adduser (.*?) (\d*)/i ) {
+			$stats->inc_name("com-privadduser");
             my $add_nick = $1;
             my $add_host = $user->get_Host($add_nick) || "nix";
             my $add_flag = $2;
@@ -715,6 +748,7 @@ sub IRC_on_private {
             }
         }
         elsif ( $command =~ m/^id\ (.*)/i ) {
+			$stats->inc_name("priv-id");
             $self->log( 3, "<Main:IRC:priv> Id from $from_nick" );
             if ( !$user->is_Active($from) ) {
                 if ( $user->active_User( $from, $1 ) ) {
@@ -742,6 +776,7 @@ sub IRC_on_private {
 #    #    DCC type argument address port [size]
 #  }
         elsif ( $command =~ m/^pass\ (.*)/i ) {
+			$stats->inc_name("priv-pass");
             my $password = crypt( $1, $from_nick );
             if ( $user->check_User($from) == 0 ) {
                 my $sth =
@@ -768,6 +803,7 @@ sub IRC_on_private {
             }
         }
         elsif ( $command =~ m/^nick\ (.*)/i ) {
+			$stats->inc_name("priv-nick");
             my $new_nick = $1;
             if ( $user->check_User($from) >= 5 ) {
                 $self->log( 3, "<Main:IRC:priv> Nickchange to $new_nick requested by $from_nick" );
@@ -776,14 +812,17 @@ sub IRC_on_private {
             }
         }
         elsif ( $command =~ m/^save/i ) {
+			$stats->inc_name("priv-save");
             $self->log( 3, "<Main:IRC:priv> Saving Configuration from $from_nick" );
             $self->save_Config;
         }
         elsif ( $command =~ m/^load/i ) {
+			$stats->inc_name("priv-load");
             $self->log( 3, "<Main:IRC:priv> Loading Configuration from $from_nick" );
             $self->read_Config;
         }
         elsif ( $command =~ m/^unban\ (.*)/i ) {
+			$stats->inc_name("priv-unban");
             $self->log( 3, "<Main:IRC:priv> Unbanning $1 by $from_nick" );
             if ( $user->check_User($from) >= 5 ) {
                 delete $self->{banlist}->{$1};
@@ -821,6 +860,8 @@ sub IRC_on_kick {
     my @kicked_users = @{ $msg_hash{to} };
     my $from_channel = @{ $msg_hash{args} }[0];
     my $kicked       = 0;
+    my $stats = $self->{_STATS};
+    $stats->inc_name("irc-kick");
     foreach my $user (@kicked_users) {
 
         if ( $user eq $self->{config}->{irc_nickname} ) {

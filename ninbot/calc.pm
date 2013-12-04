@@ -235,6 +235,7 @@ sub list_Com {
 sub Handler {
     my $calc_self    = shift;
     my $self         = $calc_self->{_BOT};
+    my $stats		 = $self->{_STATS};
     my $from         = shift;
     my $from_nick    = shift;
     my $from_channel = shift;
@@ -249,6 +250,7 @@ sub Handler {
     #
     # Random Calc
     if ( $message =~ m/^data$/i ) {
+		$stats->inc_name("com-data");
         my @calc = $calc_self->rand_Calc;
         my $nr = $calc[0];
         my $name = $calc[1];
@@ -282,6 +284,7 @@ sub Handler {
 
     # Set Calc
     elsif ( $message =~ m/^data\ (.*?)\W*=\W?(.*)$/i ) {
+		$stats->inc_name("com-dataset");
         my $calc_name = $1;
         my $calc_text = $2;
         my $calc = $calc_self->add_Calc( $calc_name, $from_nick, 0, "rw", $calc_text );
@@ -297,6 +300,7 @@ sub Handler {
 
     # Get Calc
     elsif ( $message =~ m/^data\ (.*)$/i ) {
+		$stats->inc_name("com-dataget");
         my $calc_name = $1;
         if ( $calc_name !~ m/^\W*$/i ) {
             my @calc = $calc_self->get_Calc($calc_name);
@@ -328,6 +332,7 @@ sub Handler {
 
     # Plus Calc
     elsif ( $message =~ m/^data\+\ (.*?)\W+=\W?(.*)$/i ) {
+		$stats->inc_name("com-dataplus");
         my $calc_name = $1;
         my $calc_text = $2;
         my $num = $calc_self->plus_Calc( $calc_name, $from_nick, $calc_text );
@@ -344,6 +349,7 @@ sub Handler {
     
     # Modify Calc
     elsif ( $message =~ m/^data\*\ (.*?)\W+=\W?(.*)$/i ) {
+		$stats->inc_name("com-datamod");
         my $calc_name = $1;
         my $calc_text = $2;
         my $isnew = 0;
@@ -356,6 +362,7 @@ sub Handler {
             $isnew = 1;
         }
         my $clevel = $acc_calc[7];
+        my $flag = $acc_calc[6];
         my ( $author, undef ) = split( /,/, $acc_calc[2] );
         if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 ) {
 			$calc_self->del_Calc($calc_name);
@@ -381,6 +388,7 @@ sub Handler {
 
     # Remove Calc
     elsif ( $message =~ m/^data-\ (.*)$/i ) {
+		$stats->inc_name("com-datadel");
         my $calc_name = $1;
         ( $calc_name, undef ) = split( /\s*=\s*/, $calc_name )
           if $calc_name =~ m/=/;
@@ -391,9 +399,13 @@ sub Handler {
         else {
             my ( $author, undef ) = split( /,/, $acc_calc[2] );
             my $clevel = $acc_calc[7];
+            my $flag = $acc_calc[6];
              if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 ) {
                 my $calc = $calc_self->del_Calc($calc_name);
                 $conn->privmsg( $from_channel, "Calc '$calc_name' gelöscht!" );
+                if ($calc_name =~ /^com-/) {
+					$stats->del_name($calc_name);
+				}
             }
             else {
                 $conn->privmsg( $from_channel, "Calc '$calc_name' ist schreibgeschützt!" );
@@ -404,6 +416,7 @@ sub Handler {
 
     # Calc Flag
     elsif ( $message =~ m/^dataflag\ (.*)\W+\=\W?(.*)$/i ) {
+		$stats->inc_name("com-dataflag");
         my $calc_name = $1;
         my $calc_flag = $2;
         my @acc_calc  = $calc_self->get_Calc($calc_name);
@@ -442,6 +455,7 @@ sub Handler {
 
     # Calc Level
     elsif ( $message =~ m/^datalevel\ (.*)\W+\=\W?(\d*)$/i ) {
+		$stats->inc_name("com-datalevel");
         my $calc_name  = $1;
         my $calc_level = $2;
         my @acc_calc   = $calc_self->get_Calc($calc_name);
@@ -482,6 +496,7 @@ sub Handler {
         $self->log( 3, "<Calc> Set level for entry $calc_name from $from_nick($level) on $from_channel!" );
     }
     elsif ($message =~ m/^${trigger}(?:index|list)\W?(\d*)/i or $message =~ m/^${trigger}list\W?(\d*)/i ) {
+		$stats->inc_name("com-index");
         my @com_list = $calc_self->list_Com;
         my $cur_page = $1 || 1;
         my $max_page = int( scalar(@com_list) / 20 );
@@ -501,6 +516,7 @@ sub Handler {
         $self->log( 3, "<Calc> Requesting trigger index page $cur_page from $from_nick($level) on $from_channel!" );
     }
     elsif ( $message =~ m/^match\ (.*)$/i ) {
+		$stats->inc_name("com-match");
         my $match_string = $1;
         my @calcs        = $calc_self->match_Calc($match_string);
         my $calc_names;
