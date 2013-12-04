@@ -779,10 +779,8 @@ sub IRC_on_private {
 			$stats->inc_name("priv-pass");
             my $password = crypt( $1, $from_nick );
             if ( $user->check_User($from) == 0 ) {
-                my $sth =
-                  $self->{_DBH}->update( "user",
-                    { "handle", $from_nick, "password", $password } )
-                  ; #prepare("UPDATE user SET password='$password' WHERE handle = '$from_nick'");
+                my $sth = $self->{_DBH}->update( "user", { "handle", $from_nick, "password", $password } );
+                #prepare("UPDATE user SET password='$password' WHERE handle = '$from_nick'");
                 $sth->execute;
                 $self->log( 3, "<Main:IRC:priv> Setting password for $from_nick" );
             }

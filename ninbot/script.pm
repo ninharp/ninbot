@@ -279,8 +279,10 @@ sub _replace_Vars {
 	}
 	
 	## CPU Information
-	if ($com =~ /\&(cpuarch|cputemp|cpubmips)/) {
+	if ($com =~ /\&(cpuarch|cputemp|cpubmips|cpuspeed)/) {
 		my $cpu_temp = `cat /sys/class/thermal/thermal_zone0/temp`;
+		my $cpu_freq = `sudo cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq`;
+		$cpu_freq = $cpu_freq / 1000;
 		$cpu_temp =~ s/^(\d\d)(\d\d\d)$/$1.$2/;
 		$cpu_temp = int(100 * ($cpu_temp) + 0.5) / 100;
 		
@@ -303,7 +305,8 @@ sub _replace_Vars {
 		
 		$com =~ s/\&cputemp/$cpu_temp/ig;
 		$com =~ s/\&cpuarch/$cpu_arch/ig;
-		$com =~ s/\&cpubmips/$cpu_bmips /ig;
+		$com =~ s/\&cpubmips/$cpu_bmips/ig;
+		$com =~ s/\&cpuspeed/$cpu_freq/ig;
 	}
 	
 	## Memory Info
