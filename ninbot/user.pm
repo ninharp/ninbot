@@ -35,20 +35,24 @@ sub new {
 
     bless( $self_user, $class );
     my $self = &main::get_Self;
-    $self->log( 4, "<User> Created new User object: $self_user->{-nickhandle}" );
+    $self->log( 4, "<User> Created new User object: $self_user->{-nickhandle} with flags $self_user->{-flags}" );
+    my $hosts = "";
+    foreach my $host ($self_user->{-hosts}) {
+		$hosts .= $host." ";
+	}
+    $self->log( 6, "<User> Hosts for $self_user->{-nickhandle}: $hosts");
     return $self_user;
 }
 
-sub chk_hostmask    # ( String Hostmask )
-{
-    my $self_user = shift();
-    my $hostmask  = shift();
-
-    foreach ( @{ $self_user->{'-hosts'} } ) {
+sub chk_hostmask { # ( String Hostmask )
+    my ($self_user, $hostmask)  = @_;
+    my @hosts = $self_user->{'-hosts'};
+    foreach ( @hosts ) {
         if (m/$hostmask/i) {
             return 1;    #treffer ;)
         }
     }
+    return 0;
 }
 
 sub is_identifyed        # (void)
@@ -62,12 +66,10 @@ sub is_identifyed        # (void)
     return 0;
 }
 
-sub get_flags            # (void)
-
-  #returns the flags of the user
-{
-    my $self_user = shift();
+sub get_flags {
+    my $self_user = shift;
     return $self_user->{'-flags'};
 }
+
 1;
 

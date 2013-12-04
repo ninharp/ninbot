@@ -23,18 +23,21 @@ use Data::Dumper;
 use ninbot::user;
 
 sub new {
-    my $class = shift;
-    my $self  = [];
+	my $class = shift;
+    my $self  = {@_};
     bless( $self, $class );
-    #$self->reload;
+    $self->{_BOT} = &main::get_Self;
+    $self->{_BOT}->log( 3, "<Users> Initialized..." );
+    $self->{_USERS} = [];
+    $self->reload;
     return $self;
 }
 
 sub reload {
-    my $class = shift;
-    my $self  = [];
+    my $self = shift;
     my $bot_self = &main::get_Self;
     my @users    = $bot_self->{_DBH}->select_all("user");
+    $self->{_USERS} = [];
     foreach my $user_string (@users) {
         my @row               = split( /;;;/, $user_string );
         my $user_handle       = $row[0];
@@ -45,11 +48,12 @@ sub reload {
         my $new_user_instance = ninbot::user->new(
             '-nickhandle' => $user_handle,     #string
             '-flags'      => $user_flag,
-            '-hosts'      => [@hosts],
+            '-hosts'      => @hosts,
             '-identifyed' => 0,                #boolean
             '-passwd'     => $user_password,
         );
-        push( @$self, $new_user_instance );
+        #push( @$self, $new_user_instance );
+        push($self->{_USERS}, $new_user_instance);
     }
     return $self;
 }
@@ -82,34 +86,33 @@ sub check_User {    # ( _SELF_, String $from )
     my ( $users,     $from )  = @_;
     my ( $from_user, $host )  = split( /\@/, $from );
     my ( $nick,      $ident ) = split( /\!/, $from_user );
-    foreach my $tmp_user (@$users) {
-        if ( $tmp_user->chk_hostmask($host) ) {
+    foreach my $tmp_user (@{$users->{_USERS}}) {
+        if ( $tmp_user->chk_hostmask($from) ) {
             $ret = $tmp_user->is_identifyed();
             if ( $ret == 0 ) {
-                $self->log( 3, "<Users> Error: $nick [$host] (Host found but not identified)!"
+                $self->log( 3, "<Users> Error: $nick [$from] (Host found but not identified)!"
                 );
             }
         }
     }
-    $self->log( 4, "<Users> Check User " . $nick . " with host " . $host );
+    $self->log( 4, "<Users> Check User " . $nick . " with host " . $from );
     return $ret;
 }
 
 sub check_Level {    # ( _SELF_, String $from )
-
-    # returs the userflag whether the user is identifyed or not.
-    my $self = &main::get_Self;
-    my $ret  = 0;
     my ( $users, $from ) = @_;
+    my $self = &main::get_Self;
+    my $ret  = -1;
     $self->log( 5, "<Users> check_Level($from)" );
     my ( $from_user, $host )  = split( /\@/, $from );
     my ( $nick,      $ident ) = split( /\!/, $from_user );
-    foreach my $tmp_user (@$users) {
-        if ( $tmp_user->chk_hostmask($host) ) {
+    
+    foreach my $tmp_user (@{$users->{_USERS}}) {
+        if ( $tmp_user->chk_hostmask($from) == 1 ) {
             $ret = $tmp_user->get_flags();
         }
     }
-    $self->log( 6, "<Users> check_level = Check Level " . $nick . " with host " . $host . " = " . $ret );
+    $self->log( 6, "<Users> check_level = Check Level " . $nick . " with host " . $from . " = " . $ret );
     return $ret;
 }
 
@@ -120,15 +123,13 @@ sub active_User {
     my ( $users, $from, $password ) = @_;
     my ( $from_user, $host )  = split( /\@/, $from );
     my ( $nick,      $ident ) = split( /\!/, $from_user );
-    $self->log( 5,
-        "<Users> active_User = Activate user $from_user with host $host" );
-    foreach my $tmp_user (@$users) {
-        if ( $tmp_user->chk_hostmask($host) ) {
+    $self->log( 5, "<Users> active_User = Activate user $from_user with host $host" );
+    foreach my $tmp_user (@{$users->{_USERS}}) {
+        if ( $tmp_user->chk_hostmask($from) ) {
             if ( $tmp_user->{'-passwd'} eq
                 crypt( $password, $tmp_user->{'-passwd'} ) )
             {
-                $tmp_user->{'-identifyed'} =
-                  1;    # sollte reichen, wenn ich -current_mast setze
+                $tmp_user->{'-identifyed'} = 1;    # sollte reichen, wenn ich -current_mast setze
                 $tmp_user->{'-current_mask'} = $from;
                 $ret = 1;
             }
@@ -146,7 +147,7 @@ sub is_Active {
     my ( $users, $from ) = @_;
     my $self = &main::get_Self;
     $self->log( 4, "<Users> is_Active = Is user $from active?" );
-    foreach my $tmp_user (@$users) {
+    foreach my $tmp_user (@{$users->{_USERS}}) {
         if (    $tmp_user->{'-current_mask'}
             and $tmp_user->{'-current_mask'} eq $from
             and $tmp_user->is_identifyed )
