@@ -453,7 +453,7 @@ sub IRC_on_quit {
     $stats->inc_name("irc-quit");
     foreach my $chan ( keys $self->{_CHANNEL} ) {
         $self->{_CHANNEL}->{$chan}->del_name( $event->{nick} );
-        $stats->inc_name("irc-chan-".$event->{to}[0]."-quit");
+        $stats->inc_name("irc-chan-".$chan."-quit");
     }
     $self->log( 4, "<Main:IRC> onQuit Event received from " . $event->{nick} . "." );
 }

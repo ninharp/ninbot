@@ -82,7 +82,7 @@ sub check_User {    # ( _SELF_, String $from )
 
     # returns 0 if not identifyed, and the user flags if the user is identfiyed
     my $self = &main::get_Self;
-    my $ret  = -1;
+    my $ret  = 0;
     my ( $users,     $from )  = @_;
     my ( $from_user, $host )  = split( /\@/, $from );
     my ( $nick,      $ident ) = split( /\!/, $from_user );
@@ -102,7 +102,7 @@ sub check_User {    # ( _SELF_, String $from )
 sub check_Level {    # ( _SELF_, String $from )
     my ( $users, $from ) = @_;
     my $self = &main::get_Self;
-    my $ret  = -1;
+    my $ret  = 0;
     $self->log( 5, "<Users> check_Level($from)" );
     my ( $from_user, $host )  = split( /\@/, $from );
     my ( $nick,      $ident ) = split( /\!/, $from_user );
