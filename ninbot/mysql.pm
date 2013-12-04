@@ -26,8 +26,11 @@ sub new {
     my $self  = {@_};
     bless( $self, $class );
     $self->{_BOT}         = &main::get_Self;
-    $self->{_fields_user} = ();
-    $self->{_fields_calc} = ();
+    $self->{_BOT}->log(2, "<mySQL> Initialize mySQL Connection");
+    #$self->{_fields_user} = ();
+    #$self->{_fields_calc} = ();
+    #$self->{_fileds_stats} = ();
+    $self->{_FIELDS} = (); 
     $self->{_DBH}         = DBI->connect(
         $self->{_BOT}->{config}->{sql_dsn},
         $self->{_BOT}->{config}->{sql_user},
@@ -35,7 +38,9 @@ sub new {
       )
       or print "Can't connect to the DB: $DBI::errstr\n"
       or die;
-    $self->_get_fields;
+    $self->_get_fields("user");
+    $self->_get_fields("data");
+    $self->_get_fields("stats");
     $self->{_BOT}->log( 3, "<mySQL> Initialized..." );
     return $self;
 }
@@ -58,28 +63,20 @@ sub check_dbi {
 
 # Get fields for the tables
 sub _get_fields {
-    my $backend = shift;
+    my ( $backend, $database ) = @_;
+    my $self = $backend->{_BOT};
+    $self->log( 5, "<mySQL> Getting fields for $database" );
     my @fields;
     $backend->check_dbi();
-    my $sth = $backend->{_DBH}->prepare("SHOW COLUMNS FROM user");
-    $sth->execute;
-    while ( my @row = $sth->fetchrow_array() ) {
-        push( @fields, $row[0] );
-    }
-    $sth->finish;
-    @{ $backend->{_fields_user} } = @fields;
-    undef @fields;
-    $sth = $backend->{_DBH}->prepare("SHOW COLUMNS FROM data");
+    my $sth = $backend->{_DBH}->prepare("SHOW COLUMNS FROM $database");
     $sth->execute;
     while ( my @row = $sth->fetchrow_array() ) {
 		if ($row[0] !~ m/^nr$/i) {
 			push( @fields, $row[0] );
 		}
     }
-    #print Dumper(@fields);
     $sth->finish;
-    @{ $backend->{_fields_data} } = @fields;
-    undef @fields;
+    @{ $backend->{_FIELDS}->{$database} } = @fields;
 }
 
 # add($1, @2)
@@ -91,24 +88,21 @@ sub add {
     return -1 if scalar(@_) < 3;
     my ( $backend, $database, @values ) = @_;
     my $self = $backend->{_BOT};
-    $self->log( 4,
-            "<mySQL> [$database] add($database, '" 
-          . @values . "["
-          . scalar(@values)
-          . "]')" );
+    $self->log( 5, "<mySQL> [$database] add($database, '" . @values . "[". scalar(@values) . "]')" );
     my $ret     = 0;
     my $counter = 0;
-    if ( $database =~ m/^(?:user|data)$/i ) {
+    if ( $database =~ m/^(?:user|data|stats)$/i ) {
         if ( $database =~ m/data/i and scalar(@values) < 7 ) {
-            $self->log( 4, "<mySQL> [$database] add = Not enough values!" );
+            $self->log( 4, "<mySQL> [$database] add = Not enough values for data table!" );
             last;
-        }
-        elsif ( $database =~ m/user/i and scalar(@values) < 4 ) {
-            $self->log( 4, "<mySQL> [$database] add = Not enough values!" );
+        } elsif ( $database =~ m/user/i and scalar(@values) < 4 ) {
+            $self->log( 4, "<mySQL> [$database] add = Not enough values for user table!" );
             last;
-        }
-        my $fieldname = "_fields_" . $database;
-        my @fields    = @{ $backend->{$fieldname} };
+        } elsif ( $database =~ m/stats/i and scalar(@values) < 2 ) {
+			$self->log( 4, "<mySQL> [$database] add = Not enough values for stats table!" );
+            last;
+		}
+        my @fields    = @{ $backend->{_FIELDS}->{$database} };
         foreach my $val (@values) {
             $val =~ s/^(.*)$/'$1'/;
             $values[$counter] = $val;
@@ -145,11 +139,10 @@ sub match {
     my $self = $backend->{_BOT};
     my $join = ";;;";              # join string
     $column = 0 if !defined $column;
-    $self->log( 4, "<mySQL> [$database] match($database, '$like', $column)" );
+    $self->log( 5, "<mySQL> [$database] match($database, '$like', $column)" );
     my @ret;
-    if ( $database =~ m/^(?:user|data)$/i ) {
-        my $fieldname = "_fields_" . $database;
-        my @fields    = @{ $backend->{$fieldname} };
+    if ( $database =~ m/^(?:user|data|stats)$/i ) {
+        my @fields    = @{ $backend->{_FIELDS}->{$database} };
         my $field     = $fields[$column];
         $like =~ s/\'/\\\'/gi;
         $like =~ s/\´/\\\´/gi;
@@ -166,19 +159,16 @@ sub match {
             }
         }
         if ( scalar(@ret) <= 0 ) {
-            $self->log( 4, "<mySQL> [$database] match = Nothing found! ('$like')[$column]" );
+            $self->log( 5, "<mySQL> [$database] match = Nothing found! ('$like')[$column]" );
         }
         else {
             my $num_entries = $sth->rows;
-            $self->log( 4,
-"<mySQL> [$database] match = Found $num_entries Entries ('$like')[$column]"
-            );
+            $self->log( 5, "<mySQL> [$database] match = Found $num_entries Entries ('$like')[$column]" );
         }
         $sth->finish();
     }
     else {
-        $self->log( 4,
-            "<mySQL> [$database] match = Wrong database specified!" );
+        $self->log( 4, "<mySQL> [$database] match = Wrong database specified!" );
     }
     return @ret;
 }
@@ -191,9 +181,8 @@ sub del {
     my $self = $backend->{_BOT};
     my $ret  = 0;
     $column = 0 if !defined $column;
-    $self->log( 4, "<mySQL> [$database] del($database, '$name'[$column])" );
-    my $fieldname = "_fields_" . $database;
-    my @fields    = @{ $backend->{$fieldname} };
+    $self->log( 5, "<mySQL> [$database] del($database, '$name'[$column])" );
+    my @fields    = @{ $backend->{_FIELDS}->{$database} };
     my $field     = $fields[$column];
 	$backend->check_dbi();
     my $sth = $backend->{_DBH}->prepare("DELETE FROM $database WHERE $field = '$name'");
@@ -204,22 +193,30 @@ sub del {
 # update($1, @2)
 # Returns true if the data in @2 was updated on database $1
 sub update {
-    return -1 if scalar(@_) < 5;
+	# add check for correct columns
+    #return -1 if scalar(@_) < 5;
     my ( $backend, $database, @data ) = @_;
     my $self        = $backend->{_BOT};
     my $ret         = 0;
-    my $fieldname   = "_fields_" . $database;
-    my @fields      = @{ $backend->{$fieldname} };
+    my @fields      = @{ $backend->{_FIELDS}->{$database} };
     my $index_field = $fields[0];
     my $up_fields;
-
+    my $sth;
     for ( my $i = 0 ; $i < scalar(@fields) ; $i++ ) {
-        $up_fields .= $fields[$i] . "='" . $data[$i+1] . "'";
+		if ($database eq "data") {
+			$up_fields .= $fields[$i] . "='" . $data[$i+1] . "'";
+		} else {
+			$up_fields .= $fields[$i] . "='" . $data[$i] . "'";
+		}
         $up_fields .= ", " if $i != scalar(@fields) - 1;
     }
-    $self->log( 4, "<mySQL> [$database] update($database, '$up_fields')" );
+    $self->log( 5, "<mySQL> [$database] update($database, '$up_fields')" );
     $backend->check_dbi();
-    my $sth = $backend->{_DBH}->prepare( "UPDATE $database SET $up_fields WHERE $index_field='$data[1]'");
+    if ($database eq "data") {
+		$sth = $backend->{_DBH}->prepare( "UPDATE $database SET $up_fields WHERE $index_field='$data[1]'");
+	} else {
+		$sth = $backend->{_DBH}->prepare( "UPDATE $database SET $up_fields WHERE $index_field='$data[0]'");
+	}
     $ret = $sth->execute;
     $self->log( 4, "<mySQL> [$database] update = Successfully updated!" ) if $ret;
     $self->log( 4, "<mySQL> [$database] update = Not updated!" ) if !$ret;
@@ -237,9 +234,8 @@ sub select {
     $column = 0 if !defined $column;
     $self->log( 4, "<mySQL> [$database] select($database, '$like', $column)" );
     my @ret;
-    if ( $database =~ m/^(?:user|data)$/i ) {
-        my $fieldname = "_fields_" . $database;
-        my @fields    = @{ $backend->{$fieldname} };
+    if ( $database =~ m/^(?:user|data|stats)$/i ) {
+        my @fields    = @{ $backend->{_FIELDS}->{$database} };
         my $field     = $fields[$column];
         $like =~ s/\'/\\\'/gi;
         $like =~ s/\´/\\\´/gi;
@@ -274,7 +270,7 @@ sub select_all {
     my $self = $backend->{_BOT};
     $self->log( 4, "<mySQL> [$database] select_all($database, '$join')" );
     my @ret;
-    if ( $database =~ m/^(?:user|data)$/i ) {
+    if ( $database =~ m/^(?:user|data|stats)$/i ) {
         my $sth = $backend->{_DBH}->prepare("SELECT * FROM $database");
         if ( $sth->execute ) {
             while ( my @row = $sth->fetchrow_array() ) {
@@ -287,14 +283,10 @@ sub select_all {
         }
         $sth->finish();
         if ( scalar(@ret) <= 0 ) {
-            $self->log( 4,
-                "<mySQL> [$database] select_all = Nothing returned!" );
+            $self->log( 4, "<mySQL> [$database] select_all = Nothing returned!" );
         }
         else {
-            $self->log( 4,
-                    "<mySQL> [$database] select_all = Returned "
-                  . scalar(@ret)
-                  . " entries!" );
+            $self->log( 4, "<mySQL> [$database] select_all = Returned " . scalar(@ret) . " entries!" );
         }
     }
     else {

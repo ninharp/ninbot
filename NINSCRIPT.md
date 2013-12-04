@@ -266,6 +266,15 @@ In Allen Variablen können auch Platzhalter verwendet werden um zur Laufzeit Par
 *&procs*
 > Gibt die Anzahl laufender Prozesse aus
 
+*&global_counter*
+> Gibt die Anzahl aller aufgerufenen Kommandos
+
+*&global_trigger*
+> Gibt die Anzahl aller ausgeführten !kommandos
+
+*counter(NAME)* 
+> Gibt den globalen Counter für NAME aus (Wird noch einmal ausführlich in der Statistik Sektion erklärt)
+
 *if_stack(NAME)*  
 > Gibt true zurück wenn Stack NAME definiert ist
 

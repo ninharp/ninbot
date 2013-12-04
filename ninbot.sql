@@ -17,9 +17,16 @@ CREATE TABLE `calc` (
 # DROP TABLE IF EXISTS user;
 CREATE TABLE `user` (
   `handle` varchar(9) NOT NULL default '0',
-  `hosts` blob NOT NULL,
+  `hosts` varchar(512) NOT NULL,
   `flag` tinyint(3) unsigned default '0',
   `password` varchar(128) NOT NULL default '',
   PRIMARY KEY  (`handle`)
+);
+
+# DROP TABLE IF EXISTS stats;
+CREATE TABLE `stats` (
+  `name` varchar(256) NOT NULL,
+  `value` bigint unsigned default '0',
+  PRIMARY KEY  (`name`)
 );
 

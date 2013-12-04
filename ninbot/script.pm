@@ -196,11 +196,29 @@ sub _replace_Vars {
     my $calc    = $bot->{_CALC};
     my $conn    = $self->{_CONN};
     my $develop = $self->{_DEVELOP};
+    my $stats   = $bot->{_STATS};
     my @devel   = split( /;;/, $develop );
     my @params  = split( /\ /, $param ) if defined $param;
     $param = "" if !defined $param;
     my $backend = $bot->{config}->{calc_backend};
     $bot->log( 5, "<Script> _replace_Vars = Replacing variables from $nick($level) on $chan [$param]");
+    
+    # Replace statistic values
+    if ($com =~ /\&global_counter/) {
+		my $global_counter = $stats->get_global;
+		$com =~ s/\&global_counter/$global_counter/ig;
+	}
+	
+	if ($com =~ /\&global_trigger/) {
+		my $global_trigger = $stats->get_name("_TRIGGER");
+		$com =~ s/\&global_trigger/$global_trigger/ig;
+	}
+    
+    if ($com =~ /counter\((.*?)\)/gi) {
+		my $count_name = $1;
+		my $counter = $stats->get_name($count_name);
+		$com =~ s/counter\(.*?\)/$counter/ig
+	}
 
     # Replaces some simple values
     $com =~ s/\&nick/$nick/ig;
@@ -229,13 +247,17 @@ sub _replace_Vars {
     ### Sysinfo section
     
     ## Uptime
+    # 1:01PM  up 573 days, 23:31, 1 user, load averages: 0.08, 0.04, 0.01
+	# 13:12:59 up 18:23,  5 users,  load average: 0,71, 0,72, 0,84
+	# 11:07:49 up 8 min,  1 user,  load average: 0,16, 0,13, 0,07
+	# 15:44:33 up 5 days,  2:06,  2 users,  load average: 0.05, 0.09, 0.07
     if ($com =~ /\&(uptime|updays|uphours|upmins)/) {
 		my $uptimeinfo=`uptime`;
 		my $uptime_minutes = 0;
 		my $uptime_hours = 0;
 		my $uptime_days = 0;
 		#$string=~/.*?up (.*?,.*?),/;
-		if ($uptimeinfo =~ m/.*?up.(.*?).days,.(.*?),/) {
+		if ($uptimeinfo =~ m/.*?up.(.*?).days,.?(.*?),/) {
 			$uptime_days = $1;
 			($uptime_hours, $uptime_minutes) = split(/:/, $2);
 		}
@@ -248,6 +270,9 @@ sub _replace_Vars {
 			$uptime_hours = 0;
 			$uptime_minutes = $1;
 		}
+		$uptime_days =~ s/\ //g;
+		$uptime_hours =~ s/\ //g;
+		$uptime_minutes =~ s/\ //g;
 		my $uptime = $uptime_days." Days ".$uptime_hours." Hours ".$uptime_minutes." Minutes";
 		$com =~ s/\&uptime/$uptime/ig;
 		$com =~ s/\&upmins/$uptime_minutes/ig;
