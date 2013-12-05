@@ -96,12 +96,12 @@ sub inc_name {
 	my ( $stats, $name ) = @_;
 	my $self = $stats->{_BOT};
 	my $dbh = $stats->{_DBH};
-	$stats->inc_global; # increase global on every name
 	my @ret = $dbh->select("stats", $name);
 	if (!defined $ret[1]) {
 		$self->log(2, "<Stats> No Counter '$name' found! Created new one and set to 1!");	
 		my @value = ($name, 1);
 		$dbh->add("stats", @value);
+		$stats->inc_global if ($name !~ /^irc-/); # increase global on every name
 	} else {
 		my $count = $ret[1];
 		$count++;
