@@ -37,7 +37,7 @@ sub new {
     my $self = &main::get_Self;
     $self->log( 4, "<User> Created new User object: $self_user->{-nickhandle} with flags $self_user->{-flags}" );
     my $hosts = "";
-    foreach my $host ($self_user->{-hosts}) {
+    foreach my $host (split( /\ /, $self_user->{'-hosts'} )) {
 		$hosts .= $host." ";
 	}
     $self->log( 6, "<User> Hosts for $self_user->{-nickhandle}: $hosts");
@@ -46,9 +46,11 @@ sub new {
 
 sub chk_hostmask { # ( String Hostmask )
     my ($self_user, $hostmask)  = @_;
-    my @hosts = $self_user->{'-hosts'};
+    my $user_hosts = $self_user->{'-hosts'};
+    my @hosts = split( /\ /, $user_hosts );
     foreach ( @hosts ) {
-        if (m/$hostmask/i) {
+		my $host = $_;
+        if ($hostmask =~ qr/$host/i) {
             return 1;    #treffer ;)
         }
     }
@@ -56,7 +58,6 @@ sub chk_hostmask { # ( String Hostmask )
 }
 
 sub is_identifyed        # (void)
-
   # returns the flags if the user is identifyed to the bot, else false
 {
     my $self_user = shift();

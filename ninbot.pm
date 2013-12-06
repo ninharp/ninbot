@@ -149,7 +149,6 @@ sub read_Config {
 		}
     }
     
-    $self->log(2, "<Main> Using IPv6 for Connections!") if ($self->{config}->{irc_ipv6} == 1);
     return $ret;
 }
 
@@ -170,6 +169,7 @@ sub setup_IRC {
     my $self = shift;
     $self->read_Config;
     #print Dumper($self)."\n";
+    $self->log(2, "<Main> Using IPv6 for Connections!") if ($self->{config}->{irc_ipv6} == 1);
     my $IRC = $self->{_IRC};
     $self->{conn}  = $IRC->newconn(
         Nick      => $self->{config}->{irc_nickname},

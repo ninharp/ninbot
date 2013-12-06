@@ -44,11 +44,10 @@ sub reload {
         my $user_hosts        = $row[1];
         my $user_flag         = $row[2];
         my $user_password     = $row[3];
-        my @hosts             = split( /\ /, $user_hosts );
         my $new_user_instance = ninbot::user->new(
             '-nickhandle' => $user_handle,     #string
             '-flags'      => $user_flag,
-            '-hosts'      => @hosts,
+            '-hosts'      => $user_hosts,
             '-identifyed' => 0,                #boolean
             '-passwd'     => $user_password,
         );
