@@ -203,23 +203,7 @@ sub _replace_Vars {
     my $backend = $bot->{config}->{calc_backend};
     $bot->log( 5, "<Script> _replace_Vars = Replacing variables from $nick($level) on $chan [$param]");
     
-    # Replace statistic values
-    if ($com =~ /\&global_counter/) {
-		my $global_counter = $stats->get_global;
-		$com =~ s/\&global_counter/$global_counter/ig;
-	}
-	
-	if ($com =~ /\&global_trigger/) {
-		my $global_trigger = $stats->get_name("_TRIGGER");
-		$com =~ s/\&global_trigger/$global_trigger/ig;
-	}
     
-    if ($com =~ /counter\((.*?)\)/gi) {
-		my $count_name = $1;
-		my $counter = $stats->get_name($count_name);
-		$com =~ s/counter\(.*?\)/$counter/ig
-	}
-
     # Replaces some simple values
     $com =~ s/\&nick/$nick/ig;
     $com =~ s/\&version/$bot->{_VERSION}/ig;
@@ -243,6 +227,23 @@ sub _replace_Vars {
         $com =~ s/\&param//ig;
         $com =~ s/\&parnick/$nick/ig;
     }
+    
+    # Replace statistic values
+    if ($com =~ /\&global_counter/) {
+		my $global_counter = $stats->get_global;
+		$com =~ s/\&global_counter/$global_counter/ig;
+	}
+	
+	if ($com =~ /\&global_trigger/) {
+		my $global_trigger = $stats->get_name("_TRIGGER");
+		$com =~ s/\&global_trigger/$global_trigger/ig;
+	}
+    
+    if ($com =~ /counter\((.*?)\)/gi) {
+		my $count_name = $1;
+		my $counter = $stats->get_name($count_name);
+		$com =~ s/counter\(.*?\)/$counter/ig
+	}
     
     ### Sysinfo section
     
