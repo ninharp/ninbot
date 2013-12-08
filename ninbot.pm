@@ -609,13 +609,16 @@ sub IRC_on_public {
         my $zeit         = $1 * 60;
         my $what         = $2;
         my $timer_script = sub {
-            my ( $conn, $chan, $nick, $what ) = @_;
-            $conn->privmsg( $chan, "Ey " . $nick . " dein " . $what . " ist fällig!!!" );
-            $conn->privmsg( $nick, "Dein " . $what . " ist fällig!!! Nur das du's weisst!" );
+            my ( $conn, $chan, $nick, $text, $what ) = @_;
+            $conn->privmsg( $chan, $nick . ": " . $text . ": ". $what );
         };
+ 
         $self->log( 3, "<Main:IRC:pub> Timer " . ( $zeit / 60 ) . " min ($zeit sec) $what $from $from_nick on $from_channel!" );
-        $conn->privmsg( $from_channel, "OK, $from_nick, $what ist in ". ( $zeit / 60 ) . " Minute(n) fällig!" );
-        $conn->schedule( $zeit, $timer_script, $from_channel, $from_nick, $what );
+        $conn->privmsg( $from_channel, "OK, $from_nick ich gebe dir in ". ( $zeit / 60 ) . " Minute(n) bescheid!" );
+        $conn->schedule( $zeit, $timer_script, $from_channel, $from_nick, "Jetzt ist fertig", $what );
+        if ($zeit > 60) {
+			$conn->schedule( $zeit-60, $timer_script, $from_channel, $from_nick, "Bald ist fertig", $what );
+		}
     }
     elsif ( $message =~ m/^${trigger}eval\W+(.*)/i ) {
 		$stats->inc_name("com-eval");
