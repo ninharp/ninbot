@@ -358,7 +358,7 @@ sub Handler {
             #$conn->privmsg( $from_channel, "Kein Calc fuer '$calc_name' in der Datenbank!" );
             $acc_calc[7] = 0;
             $acc_calc[6] = "rw";
-            $acc_calc[2] = $from_nick.",";
+            $acc_calc[3] = $from_nick;
             $isnew = 1;
         }
         my $clevel = $acc_calc[7];
@@ -366,7 +366,9 @@ sub Handler {
         my ( $author, undef ) = split( /,/, $acc_calc[2] );
         if ( $author eq $from_nick or $flag =~ m/w/i and $level >= $clevel or $level == 10 ) {
 			$calc_self->del_Calc($calc_name);
-			my $calc = $calc_self->add_Calc( $calc_name, $from_nick, $acc_calc[7], $acc_calc[6], $calc_text );
+			$acc_calc[3] =~ s/\ changed by\ .*$//ig;
+			$acc_calc[3] = $acc_calc[3]." changed by ". $from_nick;
+			my $calc = $calc_self->add_Calc( $calc_name, $acc_calc[3], $acc_calc[7], $acc_calc[6], $calc_text );
 			if ( $calc <= 0 ) {
 				$conn->privmsg( $from_channel, "Fehler beim überschreiben von '$calc_name'!" );
 			}
