@@ -29,6 +29,7 @@ sub new {
     $self->{_BOT} = &main::get_Self;
     $self->{_BOT}->log( 3, "<Users> Initialized..." );
     $self->{_USERS} = [];
+    $self->{_WHOIS} = "";
     $self->reload;
     return $self;
 }
@@ -76,6 +77,30 @@ sub DESTROY {
 #  my $user
 #  push( @{$user} , shift() ); # neue insants von ninbot::user in das Users-Array packen
 #}
+
+sub get_Host {    # ( _SELF_, String $from )
+	my $ret  = 0;
+    my $self = &main::get_Self;
+    my $irc = $self->{conn};
+    my $users = shift;
+    my $nick = shift;
+    $irc->whois($nick);
+    my $whois_rcvd = 0;
+#    while ($whois_rcvd == 0) {
+#		$whois_rcvd = 1 if $users->{_WHOIS} ne "";
+#	}
+	$self->{_WHOIS} = "";
+    $self->log( 4, "<Users> Get Userinfo on " . $users->{_WHOIS} );
+    return $ret;
+}
+
+sub set_Whois {
+	my $users = shift;
+	my $self = &main::get_Self;
+	my @args = @_;
+	$self->log( 6, "<Users> Setting Whois Temp Data for ".$args[0][1] );
+	$self->{_WHOIS} = $args[0][1]."!".$args[0][2]."@".$args[0][3];
+}
 
 sub check_User {    # ( _SELF_, String $from )
 

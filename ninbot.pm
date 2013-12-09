@@ -32,6 +32,8 @@ use ninbot::interpreter;
 use ninbot::stats;
 #use ninbot::partyline; # Added later
 
+use Module::Load;
+
 sub new {
     my $class = shift;
     my $self  = {@_};
@@ -43,6 +45,8 @@ sub new {
     $self->{_CURSER}   = 0;
     $self->{_MUTE}     = 0;
     $self->{_CHANNELS} = {};
+    $self->{_PLUGINS}  = ();
+    $self->{_PLUGIN_DIR} = "plugins";
 
     # $self->{_DBH}; # General Database Handler (backend independent)
     $self->{_IRC} = new IRC;
@@ -79,6 +83,21 @@ sub log {
     #    print "OK User gefunden!\n";
     #    $partyline->{outbuffer}->{$c} = "(System) ".$message."\r\n";
     #  }
+}
+
+sub validate_plugin {
+	my $self = shift;
+	my $plugin = shift;
+	my $ret = 0;
+	my $directory = $self->{_PLUGIN_DIR};
+	my $module = $directory."/".$plugin.".pm";
+	$self->log(3, "<Main> Validate Plugin $plugin ($module)");
+    load $module;
+    #my $test = new $plugin;
+    if (defined $plugin->Handler and defined $plugin->valid and defined $plugin->DESTROY) {
+		$ret = $plugin->valid;
+	}
+	return $ret;
 }
 
 # Read Configuration
@@ -118,8 +137,41 @@ sub read_Config {
     $self->{_CALC}   = new ninbot::calc;           # Loading Calc Module
     $self->{_SCRIPT} = new ninbot::interpreter;    # Loading Script Module
     $self->{_STATS}  = new ninbot::stats;		   # Loading Stats Module
-
     
+    # Check for plugins
+    my $directory = $self->{_PLUGIN_DIR};
+    $self->log( 2, "<Main> Checking for Plugins" );
+    
+	if (-d $directory) {
+		my @files;
+		opendir (DIR, $directory) or die $!;
+		while (my $file = readdir(DIR)) {
+			if ($file ne "." and $file ne ".." and $file =~ m/.*\.pm/) {
+				push(@files, $file);
+			}
+		}
+		$self->{_PLUGINS} = \@files;
+	} 
+	
+	my @plugins = @{$self->{_PLUGINS}};
+	my @valid_plugins = ();
+
+	my $num_plugins = scalar(@plugins);
+	if ($num_plugins > 0) {
+		$self->log( 2, "<Main> Found ".$num_plugins." Plugins" ); 
+		foreach my $plugin (@plugins) {
+			$plugin =~ s/(.*)\.pm/$1/ig;
+			push (@valid_plugins, $plugin) if $self->validate_plugin($plugin);
+		}
+	}
+	$self->{_PLUGINS} = \@valid_plugins;
+	$num_plugins = scalar(@valid_plugins);
+	if ($num_plugins > 0) {
+		$self->log( 2, "<Main> ".$num_plugins." usable Plugin/s found!" );
+	}
+	
+	
+	# Server Management    
     my %server = %{ $config{server} };
     $self->{_SERVER} = keys %server;
     my @server = $self->{_SERVER};
@@ -212,6 +264,7 @@ sub setup_Handler {
         and $conn->add_global_handler( 'msg',           \&IRC_on_private )
         and $conn->add_global_handler( 'invite',        \&IRC_on_invite )
         and $conn->add_global_handler( 'cversion',      \&IRC_on_ctcp_version )
+        and $conn->add_global_handler( 'whoisuser',		\&IRC_on_whoisuser )
         and $conn->add_global_handler( 'namreply',      \&IRC_on_names_reply ) )
     {
         return 1;
@@ -494,6 +547,17 @@ sub IRC_on_names_reply {
     $self->log( 4, "<Main:IRC> NamesReply Event received for " . $chan . "." );
 }
 
+# IRC Handler on who reply
+sub IRC_on_whoisuser {
+	my $self  = &main::get_Self;
+    my $irc   = shift;
+    my $event = shift;
+    my $user  = $self->{_USER};
+	#print Dumper($event)."\n";
+	$user->set_Whois($event->{args});
+    #$self->log( 4, "<Main:IRC> WhoisUser Event received for " . $chan . "." );
+}
+
 # IRC Handler on public/private this choose which one to choose
 # fixed the problem with + and ! channels
 #sub IRC_on_pubpriv {
@@ -658,16 +722,23 @@ sub IRC_on_public {
                         $self->{_SCRIPT}->parse_Script( $from_nick, $from_channel, $script, $level, $param );
                     }
                     else {
-                        $self->log( 3, "<Main:IRC:pub> User $from_nick level ($level) is not high enough for that calc ($calc_level)!" );
+                        $self->log( 3, "<Main:IRC:pub> User $from_nick level ($level) is not high enough for that calc $calc_level)!" );
                     }
                 }
                 elsif ( $calc_text =~ m/^handler\((.*?)\)$/i ) {
                     my $handler = $1;
-                    $self->log( 4, "<Main:IRC:pub> Entering Handler $handler from Calc!" );
-                    my $HDL = $self->{ "_" . uc($handler) };
-                    $param = " " . $param if $param ne "";
-                    $conn->privmsg( $from_channel, "3rd Party Module werden in kürze unterstützt!" );
+                    
+                    #my $HDL = $self->{ "_" . uc($handler) };
+                    #$param = " " . $param if $param ne "";
+                    #$conn->privmsg( $from_channel, "3rd Party Module werden in kürze unterstützt!" );
 					#$HDL->Handler($from_nick, $from_channel, $self->{config}->{command_trigger}.$command.$param);
+					foreach my $plugin (@{$self->{_PLUGINS}}) {
+						if ($plugin eq $handler) {
+							$self->log( 4, "<Main:IRC:pub> Entering Handler $handler from Calc!" );
+							my $plugin_ret = $plugin->Handler($command, $param);
+							$self->{conn}->privmsg( $from_channel, $plugin_ret );
+						}
+					}
                 }
                 elsif ( $calc_text =~ m/^\!\!(.*)/i ) {
                     my $link = $1;
