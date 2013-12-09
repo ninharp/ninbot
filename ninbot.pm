@@ -33,6 +33,7 @@ use ninbot::stats;
 #use ninbot::partyline; # Added later
 
 use Module::Load;
+use Module::Reload;
 
 sub new {
     my $class = shift;
@@ -92,8 +93,8 @@ sub validate_plugin {
 	my $directory = $self->{_PLUGIN_DIR};
 	my $module = $directory."/".$plugin.".pm";
 	$self->log(3, "<Main> Validate Plugin $plugin ($module)");
+	Module::Reload->check;
     load $module;
-    #my $test = new $plugin;
     if (defined $plugin->Handler and defined $plugin->valid and defined $plugin->DESTROY) {
 		$ret = $plugin->valid;
 	}
@@ -735,6 +736,7 @@ sub IRC_on_public {
 					foreach my $plugin (@{$self->{_PLUGINS}}) {
 						if ($plugin eq $handler) {
 							$self->log( 4, "<Main:IRC:pub> Entering Handler $handler from Calc!" );
+							#load $self->{_PLUGIN_DIR}."/".$plugin.".pm";
 							my $plugin_ret = $plugin->Handler($command, $param);
 							$self->{conn}->privmsg( $from_channel, $plugin_ret );
 						}

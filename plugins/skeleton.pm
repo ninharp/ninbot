@@ -22,6 +22,8 @@ sub Handler {
 	$self->log( 4, "<".$plugin_name."> Plugin Object Handler entered." );
 	if ($param =~ m/skeleton/) {
 		$return = "Skeleton rocks";
+	} else {
+		$return = "No Parameters";
 	}
 	return $return;
 }

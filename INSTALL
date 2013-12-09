@@ -1,10 +1,3 @@
-CPAN Module Dependencies für Perl
-
-Config::General
-DBI
-DBD::mysql
-
-
 Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 
 1. Als allererstes müssen wir schauen das wir die Software die wir zusätzlich brauchen auch installiert haben.
@@ -14,6 +7,8 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 		- Perl CPAN Module Config::General
 		- Perl CPAN Module DBI
 		- Perl CPAN Module DBD::mysql
+		- Perl CPAN Module Module::Load
+		- Perl CPAN Module Module::Reload
 		
 	Um Perl, MySQL Client zu installieren schaue bitte nach wie du das bei deiner Linux Distribution machen kannst.
 	
@@ -22,13 +17,15 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 	perl -MCPAN -e"install Config::General"
 	perl -MCPAN -e"install DBI"
 	perl -MCPAN -e"install DBD::mysql"
+	perl -MCPAN -e"install Module::Load"
+	perl -MCPAN -e"install Module::Reload"
 	
 2. Wenn alles funktioniert hat und die Installation der Module abgeschlossen ist machen wir uns dadran den Bot zu konfigurieren
 
 	Dazu entpacken wir die ninbot tar.gz und wechseln in das Verzeichnis
 	
-	tar xzfv ninbot-0.83.tar.gz
-	cd ninbot-0.83
+	tar xzfv ninbot-0.XX.tar.gz
+	cd ninbot-0.XX
 	
 	Danach kopieren wir die Beispielconfig und editieren Sie danach
 	
