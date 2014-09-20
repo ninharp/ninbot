@@ -5,4 +5,5 @@ ninbot.conf
 ninbot.log
 nicks/*
 test.pl
+web/.htaccess
 
