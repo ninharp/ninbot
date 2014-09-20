@@ -728,15 +728,9 @@ sub IRC_on_public {
                 }
                 elsif ( $calc_text =~ m/^handler\((.*?)\)$/i ) {
                     my $handler = $1;
-                    
-                    #my $HDL = $self->{ "_" . uc($handler) };
-                    #$param = " " . $param if $param ne "";
-                    #$conn->privmsg( $from_channel, "3rd Party Module werden in kürze unterstützt!" );
-					#$HDL->Handler($from_nick, $from_channel, $self->{config}->{command_trigger}.$command.$param);
 					foreach my $plugin (@{$self->{_PLUGINS}}) {
 						if ($plugin eq $handler) {
 							$self->log( 4, "<Main:IRC:pub> Entering Handler $handler from Calc!" );
-							#load $self->{_PLUGIN_DIR}."/".$plugin.".pm";
 							my $plugin_ret = $plugin->Handler($command, $param);
 							$self->{conn}->privmsg( $from_channel, $plugin_ret );
 						}

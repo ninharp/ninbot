@@ -2,7 +2,7 @@
 #####################################
 # ninBOT installation script
 # 
-# $Id: install.sh,v 1.1 2003/04/17 00:27:03 prahnin Exp $
+# $Id$
 #####################################
 
 BACKTITLE="ninBOT Installation/Configuration Routine";
