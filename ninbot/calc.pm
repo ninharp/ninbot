@@ -102,8 +102,10 @@ sub add_Calc {
     my $ret       = 1;
     my $dbh       = $calc_self->{_DBH};
     my ( $name, $author, $calc_level, $calc_flag, $text ) = @_;
-    $name =~ s/\'/\\\'/gi;
-    $text =~ s/\'/\\\'/gi;
+    $name =~ s/\'/\'\'/gi;
+    $text =~ s/\'/\'\'/gi;
+    #$text =~ s/\(/\\\(/g;
+    #$text =~ s/\)/\\\(/g;
     $self->log( 3, "<Calc> Added a new calc '" . $name . "'" );
 
     # array should be like this

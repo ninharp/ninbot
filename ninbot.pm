@@ -603,7 +603,8 @@ sub IRC_on_public {
     my $from_nick    = $msg_hash{nick};
     my $from         = $msg_hash{from};
     my $from_channel = lc($msg_hash{to}[0]);
-    my $level        = $user->check_Level($from);
+    my $level        = 0;
+    
     my $trigger      = $self->{config}->{command_trigger};
     my $conn         = $self->{conn};
     
@@ -651,6 +652,7 @@ sub IRC_on_public {
     elsif ( $message =~ m/^${trigger}join\ (.*)/i ) {
 		$stats->inc_name("com-join");
         my $join_chan = $1;
+        $level = $user->check_Level($from);
         if ( $level >= 4 ) {
 
             #print Dumper($self);
@@ -663,6 +665,7 @@ sub IRC_on_public {
             }
         }
     }
+    # TODO: Add parameter to mute command
     elsif ( $message =~ m/^${trigger}mute$/i ) {
 		$stats->inc_name("com-mute");
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
@@ -702,6 +705,7 @@ sub IRC_on_public {
     elsif ( $message =~ m/^${trigger}eval\W+(.*)/i ) {
 		$stats->inc_name("com-eval");
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
+            $level = $user->check_Level($from);
             $self->{_SCRIPT}->{command} = "eval";
             $self->{_SCRIPT}->parse_Script( $from_nick, $from_channel, $1, $level );
         }
@@ -710,6 +714,7 @@ sub IRC_on_public {
         }
     }
     elsif ( $message =~ m/^$trigger(.*?)$/i ) {
+        $level = $user->check_Level($from);
 		if ( !defined $self->{_CHANNEL}->{$from_channel}) {
 			$self->{_CHANNEL}->{$from_channel} = ninbot::channel->new( '_NAME' => $from_channel );
 		}

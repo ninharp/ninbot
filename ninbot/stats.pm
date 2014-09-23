@@ -98,7 +98,7 @@ sub inc_name {
 	my $dbh = $stats->{_DBH};
 	my @ret = $dbh->select("stats", $name);
 	if (!defined $ret[1]) {
-		$self->log(2, "<Stats> No Counter '$name' found! Created new one and set to 1!");	
+		$self->log(2, "<Stats> No Counter '$name' found! Create new one and set to 1!");	
 		my @value = ($name, 1);
 		$dbh->add("stats", @value);
 		$stats->inc_global if ($name !~ /^irc-/); # increase global on every name
