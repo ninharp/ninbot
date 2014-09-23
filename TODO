@@ -1,0 +1,8 @@
+IRC/Event.pm:253:### need numerics to be able to map to multiple strings
+IRC/Event.pm:416:### see above todo
+ninbot/partyline.pm:18:# Make it useable ;P
+ninbot/interpreter.pm:18:# Merge interpreter.pm and script.pm to one file
+ninbot/script.pm:187:# Problem if somebody use trigger on an other nick and not itself and the script contains an nick based counter it will be counted the wrong one
+ninbot.pm:106:# Remove the redundant config value of irc_server or remove the servers array
+ninbot.pm:334:# change to some better ip getting method
+ninbot.pm:439:# Make the inviting text read from calc

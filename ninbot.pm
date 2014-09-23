@@ -35,6 +35,7 @@ use ninbot::stats;
 use Module::Load;
 use Module::Reload;
 
+
 sub new {
     my $class = shift;
     my $self  = {@_};
@@ -102,6 +103,7 @@ sub validate_plugin {
 }
 
 # Read Configuration
+# TODO: Remove the redundant config value of irc_server or remove the servers array
 sub read_Config {
     my $self = shift;
     my $ret  = 1;
@@ -329,7 +331,7 @@ sub quit {
 }
 
 # Gets actual IP
-# TODO: change to some better
+# TODO: change to some better ip getting method
 sub get_IP {
     my $self = shift;
 	$self->log( 3, "<Main> Trying to get your IP... " );
@@ -406,6 +408,10 @@ sub IRC_on_disconnect {
     $irc->connect();
 }
 
+
+
+
+
 # IRC Handler on connect
 sub IRC_on_connect {
     my $self  = &main::get_Self;
@@ -430,6 +436,7 @@ sub IRC_on_connect {
 }
 
 # IRC Handler on invite
+# TODO: Make the inviting text read from calc
 sub IRC_on_invite {
     my $self   = &main::get_Self;
     my $irc    = shift;

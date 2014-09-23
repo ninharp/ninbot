@@ -1,4 +1,5 @@
 .~*
+ninbot.sublime*
 ninbot.channels
 documentation.odt
 ninbot.conf
@@ -7,3 +8,5 @@ nicks/*
 test.pl
 web/.htaccess
 
+Config/*
+IRC/IO/*

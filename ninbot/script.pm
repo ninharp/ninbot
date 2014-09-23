@@ -183,6 +183,8 @@ sub _parse {
     #  return;
 }
 
+# Replaces Variables and Constants to its Values
+# TODO: Problem if somebody use trigger on an other nick and not itself and the script contains an nick based counter it will be counted the wrong one
 sub _replace_Vars {
     my ( $self, $com ) = @_;
     my $bot     = $self->{_BOT};
