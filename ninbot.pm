@@ -298,7 +298,7 @@ sub handle_Event {
     my $from_channel = $msg_hash{to}[0];
     my @calc         = $calc->get_Calc("data-event-$event_type");
     my $user         = $self->{_USER};
-    my $level        = $user->check_Level($from);
+    my $level        = 0;
     my $do_events    = "";
     $do_events = $calc[2] if defined $calc[1];
     my @c_calc = $calc->get_Calc("data-event-$from_channel-$event_type");
@@ -315,6 +315,7 @@ sub handle_Event {
             my @event_calc = $calc->get_Calc( $event );
             if ( defined $event_calc[1] ) {
                 my $event_script = $event_calc[2];
+                $level = $user->check_Level($from);
                 $self->log( 3, "<Main:IRC> Running $event_type event for channel $from_channel: $event" );
                 $script->parse_Script( $from_nick, $from_channel, $event_script, $level );
             }
@@ -605,7 +606,6 @@ sub IRC_on_public {
     my $from         = $msg_hash{from};
     my $from_channel = lc($msg_hash{to}[0]);
     my $level        = 0;
-    
     my $trigger      = $self->{config}->{command_trigger};
     my $conn         = $self->{conn};
     
