@@ -12,4 +12,4 @@ ninbot
 Continue my work from 2003 and make it completely open source
 
 You can find a installation howto (in german) in [INSTALL](INSTALL "Installation instructions")  
-You can find a small documentation (in german) in [NINSCRIPT](NINSCRIPT.md "ninScript Documentation")
+You can find a small documentation (in german) in the [DOCUMENTATION](documentation.pdf "ninScript Documentation")
