@@ -195,6 +195,7 @@ sub read_Config {
             my $key;
             my ( $channel, $topic, $flag, $comment ) = split( /;;;/, $_ );
             ( $channel, $key ) = split( /\ /, $channel ) if $channel =~ m/\s/;
+            $channel = lc $channel;
             $self->{channels}->{$channel} = 1;
         }
         close(CHANS);
@@ -704,6 +705,7 @@ sub IRC_on_public {
     }
     elsif ( $message =~ m/^${trigger}eval\W+(.*)/i ) {
 		$stats->inc_name("com-eval");
+	#print $from_channel."\n\n".Dumper($self->{_CHANNEL})."\n\n";
         if ( $self->{_CHANNEL}->{$from_channel}->isMuted() == 0 ) {
             $level = $user->check_Level($from);
             $self->{_SCRIPT}->{command} = "eval";
