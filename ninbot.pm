@@ -22,8 +22,9 @@ use strict;
 use Config::General qw(ParseConfig SaveConfig);
 use Data::Dumper;
 use IRC;
-use DBI;
+#use DBI;
 use ninbot::mysql;
+use ninbot::sqlite;
 use ninbot::textdb;
 use ninbot::calc;
 use ninbot::users;
@@ -126,6 +127,11 @@ sub read_Config {
             # Text Backend
             $self->log( 2, "<Main> Using textDB Database Backend" );
             $self->{_DBH} = new ninbot::textdb;
+        }
+        elsif ( $self->{config}->{calc_backend} =~ m/^sqlite/i ) {
+             # SQLite Backend
+            $self->log( 2, "<Main> Using SQLite Database Backend" );
+            $self->{_DBH} = new ninbot::sqlite;
         }
         else {
 
@@ -458,6 +464,7 @@ sub IRC_on_invite {
 }
 
 # IRC Handler on nick in use
+# TODO: Implement alternate nicks in config file
 sub IRC_on_nick_in_use {
     my $self  = &main::get_Self;
     my $irc   = shift;

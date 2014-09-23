@@ -58,6 +58,7 @@ sub DESTROY {
         "<Script> Script Object Destroyed. (" . $self->{'-command'} . ")" );
 }
 
+#TODO: Enable using of escaped special chars like ; and so on
 sub _parse {
     my $self = shift;
     my $script;
