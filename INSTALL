@@ -48,7 +48,7 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 	</server>
 	daemon   0						- Soll der Bot als Daemonprozess im Hintergrund laufen?
 	sql_user   root						- SQL Benutzername
-	sql_password   giq3byna					- SQL Passwort
+	sql_password   gigg4my				- SQL Passwort
 	sql_dsn   dbi:mysql:ninbot:localhost:3306		- SQL Verbindungsstring (dbi:mysql:DBNAME:DBSERVER:DBPORT)
 	
 	command_trigger   !					- Kommandotrigger (Standard ist !)
