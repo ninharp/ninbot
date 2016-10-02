@@ -232,6 +232,7 @@ sub setup_IRC {
     $self->read_Config;
     #print Dumper($self)."\n";
     $self->log(2, "<Main> Using IPv6 for Connections!") if ($self->{config}->{irc_ipv6} == 1);
+    $self->log(2, "<Main> Using SSL for Connections!") if ($self->{config}->{irc_ssl} == 1);
     my $IRC = $self->{_IRC};
     $self->{conn}  = $IRC->newconn(
         Nick      => $self->{config}->{irc_nickname},
@@ -240,6 +241,7 @@ sub setup_IRC {
         Username  => $self->{config}->{irc_ident},
         Ircname   => $self->{config}->{irc_email},
         LocalAddr => $self->{config}->{irc_hostname},
+        SSL       => $self->{config}->{irc_ssl},
         IPV6	  => $self->{config}->{irc_ipv6}
     );
     #$self->{ip} = $self->get_IP;
