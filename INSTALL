@@ -9,6 +9,7 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 		- Perl CPAN Module DBD::mysql
 		- Perl CPAN Module Module::Load
 		- Perl CPAN Module Module::Reload
+		- Perl CPAN Module IO::Socket::INET6
 		
 	Um Perl, MySQL Client zu installieren schaue bitte nach wie du das bei deiner Linux Distribution machen kannst.
 	
@@ -19,6 +20,7 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 	perl -MCPAN -e"install DBD::mysql"
 	perl -MCPAN -e"install Module::Load"
 	perl -MCPAN -e"install Module::Reload"
+	perl -MCPAN -e"install IO::Socket::INET6"
 	
 2. Wenn alles funktioniert hat und die Installation der Module abgeschlossen ist machen wir uns dadran den Bot zu konfigurieren
 
@@ -43,6 +45,7 @@ Installationsanleitung für ninbot >= v0.83 mit mySQL Backend
 	irc_email   owner ninharp				- IRC Realname des Bots (im euIRC den Nickname des Owners verwenden)
 	irc_hostname	ip to bind to				- IRC Host oder IP über den der Bot sich verbindet
 	irc_ipv6	1					- IPv6 Modus ein oder ausschalten
+	irc_ssl		0					- SSL Verbindung zum IRC Server ein oder ausschalten
 	<server>
 		1   irc.hes.de.euirc.net			- IRC Server zu dem Verbunden wird (Sorry für die Redundanz, wird noch geaendert)
 	</server>
