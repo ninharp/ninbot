@@ -16,20 +16,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-
-
-
 use strict;
-use ninbot;
+use ninBot;
+use POE;
 
 $| = 1;
 
-### Create new ninbot Object
-
-my $bot = ninbot->new();
+### Create new ninBot Object
+my $bot = ninBot->new();
 
 ### Variables
-
 my $pwd = `pwd`;
 chop($pwd);
 my %config = ();
@@ -92,8 +88,8 @@ $bot->log( 0, "<Bot> Reading out configuration.." );
 &read_Config();
 $bot->log( 0, "<Bot> Set Debuglevel to " . chop( $config{debug} ) )
   if defined $config{debug};
-$bot->log( 0, "<Bot> Setting up IRC Connection.." );
-$bot->setup_IRC();
+#$bot->log( 0, "<Bot> Setting up IRC Connection.." );
+#$bot->setup_IRC();
 $bot->log( 0, "<Bot> - Using IRC Nickname:\t\t" . $config{irc_nickname} );
 $bot->log( 0, "<Bot> - Using IRC Server:\t\t" . $config{irc_server} );
 my %server = %{ $config{server} };
@@ -102,8 +98,8 @@ foreach ( keys %server ) {
     $bot->log( 0, "<Bot> Server $_ = $server{$_}" );
 }
 
-$bot->log( 0, "<Bot> Setting up IRC Handler.." );
-$bot->setup_Handler();
+#$bot->log( 0, "<Bot> Setting up IRC Handler.." );
+#$bot->setup_Handler();
 if ( $config{daemon} ) {
     $bot->log( 0, "<Bot> Forking Bot.." );
     my $pid = fork;
@@ -114,3 +110,4 @@ if ( $config{daemon} ) {
 }
 $bot->log( 1, "<Bot> Starting IRC Connection.." );
 $bot->start_IRC();
+

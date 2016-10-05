@@ -1,8 +1,9 @@
-package IRC::EventQueue;
+package ninBot::EventQueue;
 
-use IRC::EventQueue::Entry;
+use ninBot::EventQueue::Entry;
 
 use strict;
+use warnings;
 
 sub new {
   my $class = shift;
@@ -24,7 +25,7 @@ sub enqueue {
   my $time = shift;
   my $content = shift;
 
-  my $entry = new IRC::EventQueue::Entry($time, $content);
+  my $entry = new ninBot::EventQueue::Entry($time, $content);
   $self->queue->{$entry->id} = $entry;
   return $entry->id;
 }
@@ -42,7 +43,7 @@ sub dequeue {
     $result = $self->queue->{$event};
     delete $self->queue->{$event};
   } else { # we got passed an actual event object
-    ref($event) eq 'IRC::EventQueue::Entry'
+    ref($event) eq 'ninBot::EventQueue::Entry'
         or die "Cannot delete event type of " . ref($event) . "!";
 
     $result = $self->queue->{$event->id};

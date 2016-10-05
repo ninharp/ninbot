@@ -1,6 +1,7 @@
-package IRC::EventQueue::Entry;
+package ninBot::EventQueue::Entry;
                                                                                                                                      
 use strict;
+use warnings;
                                                                                                                                      
 my $id = 0;
                                                                                                                                      
