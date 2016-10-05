@@ -16,11 +16,11 @@
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 # TODO: Merge interpreter.pm and script.pm to one file
-package ninbot::interpreter;
+package ninBot::Interpreter;
 
 use strict;
 use Data::Dumper;
-use ninbot::script;
+use ninBot::Script;
 
 # Creates a new script interpreter
 sub new {
@@ -59,7 +59,7 @@ sub parse_Script {
     my $calc       = $self->{_CALC};
     my $stats      = $self->{_STATS};
     my $conn       = $self->{conn};
-    my $script_obj = ninbot::script::new(
+    my $script_obj = ninBot::Script::new(
         '-param'    => $param,
         '-command'  => $script_self->{command},
         '-channel'  => $chan,

@@ -16,7 +16,7 @@
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 # TODO: Change channel administration
-package ninbot::channel;
+package ninBot::IRC::Channel;
 
 use strict;
 use DBI;
@@ -29,7 +29,7 @@ sub new {
     bless( $channel_self, $class );
 
     my $self = &main::get_Self;
-    my $conn = $self->{conn};
+    my $conn = $self->{_IRC};
 
     $channel_self->{_NAME} = lc( $channel_self->{_NAME} );
     my $channel = $channel_self->{_NAME};
