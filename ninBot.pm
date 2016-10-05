@@ -1,5 +1,5 @@
 # ninBot Main Bot Class (c) Michael Sauer - https://github.com/ninharp/ninbot
-# ninbot.pm $Id$
+# ninBot.pm $Id$
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -15,23 +15,24 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-package ninbot;
+package ninBot;
 
 use warnings;
 use strict;
 use Config::General qw(ParseConfig SaveConfig);
 use Data::Dumper;
-use IRC;
-#use DBI;
-use ninbot::mysql;
-use ninbot::sqlite;
-use ninbot::textdb;
-use ninbot::calc;
-use ninbot::users;
-use ninbot::channel;
-use ninbot::interpreter;
-use ninbot::stats;
-#use ninbot::partyline; # Added later
+use POE;
+use ninBot::IRC::Bot;
+use ninBot::Database::MySQL;
+use ninBot::Database::SQLite;
+use ninBot::Database::textDB;
+use ninBot::IRC::Users;
+use ninBot::IRC::Channel;
+use ninBot::Calc;
+use ninBot::fzCalc;
+use ninBot::Interpreter;
+use ninBot::Stats;
+#use ninBot::partyline; # Added later
 
 use Module::Load;
 use Module::Reload;
@@ -40,21 +41,22 @@ use Module::Reload;
 sub new {
     my $class = shift;
     my $self  = {@_};
-    bless( $self, $class );
-    $self->{_DEBUG}    = 2;
-    $self->{_VERSION}  = `cat VERSION`;
-    $self->{_CONFIG}   = "ninbot.conf";
-    $self->{_SERVER}   = ();
-    $self->{_CURSER}   = 0;
-    $self->{_MUTE}     = 0;
-    $self->{_CHANNELS} = {};
-    $self->{_PLUGINS}  = ();
-    $self->{_PLUGIN_DIR} = "plugins";
+    $self->{_DEBUG}    		= 2;
+    $self->{_VERSION}  		= `cat VERSION`;
+    $self->{_CONFIG}   		= "ninbot.conf";
+    $self->{_SERVER}   		= ();
+    $self->{_CURSER}   		= 0;
+    $self->{_MUTE}     		= 0;
+    $self->{_CHANNELS} 		= {};
+    $self->{_PLUGINS}  		= ();
+    $self->{_PLUGIN_DIR} 	= "plugins";
+    $self->{_TAG} 			= "ninBot";
 
-    # $self->{_DBH}; # General Database Handler (backend independent)
-    $self->{_IRC} = new IRC;
-    #  $self->{_PARTYLINE} = new ninbot::partyline;
+
+    #$self->{_DBH}; # General Database Handler (backend independent)
     
+    #  $self->{_PARTYLINE} = new ninbot::partyline;
+	bless( $self, $class );    
     return $self;
 }
 
@@ -94,7 +96,7 @@ sub validate_plugin {
 	my $ret = 0;
 	my $directory = $self->{_PLUGIN_DIR};
 	my $module = $directory."/".$plugin.".pm";
-	$self->log(3, "<Main> Validate Plugin $plugin ($module)");
+	$self->log(3, "<".$self->{_TAG}."> Validate Plugin $plugin ($module)");
 	Module::Reload->check;
     load $module;
     if (defined $plugin->Handler and defined $plugin->valid and defined $plugin->DESTROY) {
@@ -117,39 +119,48 @@ sub read_Config {
     # Choosing Calc Database Backend
     if ( !defined $self->{_DBH} ) {
         if ( $self->{config}->{calc_backend} =~ m/^mysql$/i ) {
-
             # SQL Backend
-            $self->log( 2, "<Main> Using mySQL Database Backend" );
-            $self->{_DBH} = new ninbot::mysql;
+            $self->log( 2, "<".$self->{_TAG}."> Using mySQL Database Backend" );
+            $self->{_DBH} = new ninBot::Database::MySQL;
+            $self->{_CALC}   = new ninBot::Calc;           # Loading Calc Module
+        }
+        elsif ( $self->{config}->{calc_backend} =~ m/^fzsql$/i ) {
+            # SQL Backend
+            $self->log( 2, "<".$self->{_TAG}."> Using feuerzeug mySQL Database Backend" );
+            $self->{_DBH} = new ninBot::Database::MySQL;
+            $self->{_CALC}   = new ninBot::fzCalc;           # Loading feuerzeug Calc Module
         }
         elsif ( $self->{config}->{calc_backend} =~ m/^textdb$/i ) {
 
             # Text Backend
-            $self->log( 2, "<Main> Using textDB Database Backend" );
-            $self->{_DBH} = new ninbot::textdb;
+            $self->log( 2, "<".$self->{_TAG}."> Using textDB Database Backend" );
+            $self->{_DBH} = new ninBot::Database::textDB;
+            $self->{_CALC}   = new ninBot::Calc;           # Loading Calc Module
         }
         elsif ( $self->{config}->{calc_backend} =~ m/^sqlite/i ) {
              # SQLite Backend
-            $self->log( 2, "<Main> Using SQLite Database Backend" );
-            $self->{_DBH} = new ninbot::sqlite;
+            $self->log( 2, "<".$self->{_TAG}."> Using SQLite Database Backend" );
+            $self->{_DBH} = new ninBot::Database::SQLite;
+            $self->{_CALC}   = new ninBot::Calc;           # Loading Calc Module
         }
         else {
 
             # Wrong or no backend! Default text backend
-            $self->log( 1, "<Main> Unknown Database Backend! Falling back to 'textDB'" );
+            $self->log( 1, "<".$self->{_TAG}."> Unknown Database Backend! Falling back to 'textDB'" );
             $self->{config}->{calc_backend} = "textDB";
-            $self->{_DBH} = new ninbot::textdb;
+            $self->{_DBH} = new ninBot::Database::textDB;
+            $self->{_CALC}   = new ninBot::Calc;           # Loading Calc Module
         }
     }
-
-    $self->{_USER}   = new ninbot::users;          # Loading Users Module
-    $self->{_CALC}   = new ninbot::calc;           # Loading Calc Module
-    $self->{_SCRIPT} = new ninbot::interpreter;    # Loading Script Module
-    $self->{_STATS}  = new ninbot::stats;		   # Loading Stats Module
     
+    $self->{_USER}   = new ninBot::IRC::Users;     # Loading Users Module
+    $self->{_SCRIPT} = new ninBot::Interpreter;    # Loading Script Module
+    $self->{_STATS}  = new ninBot::Stats;		   # Loading Stats Module
+    
+
     # Check for plugins
     my $directory = $self->{_PLUGIN_DIR};
-    $self->log( 2, "<Main> Checking for Plugins" );
+    $self->log( 2, "<".$self->{_TAG}."> Checking for Plugins" );
     
 	if (-d $directory) {
 		my @files;
@@ -167,7 +178,7 @@ sub read_Config {
 
 	my $num_plugins = scalar(@plugins);
 	if ($num_plugins > 0) {
-		$self->log( 2, "<Main> Found ".$num_plugins." Plugins" ); 
+		$self->log( 2, "<".$self->{_TAG}."> Found ".$num_plugins." Plugins" ); 
 		foreach my $plugin (@plugins) {
 			$plugin =~ s/(.*)\.pm/$1/ig;
 			push (@valid_plugins, $plugin) if $self->validate_plugin($plugin);
@@ -176,7 +187,7 @@ sub read_Config {
 	$self->{_PLUGINS} = \@valid_plugins;
 	$num_plugins = scalar(@valid_plugins);
 	if ($num_plugins > 0) {
-		$self->log( 2, "<Main> ".$num_plugins." usable Plugin/s found!" );
+		$self->log( 2, "<".$self->{_TAG}."> ".$num_plugins." usable Plugin/s found!" );
 	}
 	
 	
@@ -201,12 +212,13 @@ sub read_Config {
         close(CHANS);
     }
     else {
-		$self->log( 2, "<Main> Channels file does not exist! Creating a sample file" );
+		$self->log( 2, "<".$self->{_TAG}."> Channels file does not exist! Creating a sample file" );
 		if ( open( CHANS, ">$self->{config}->{channel_file}" ) ) {
 			print CHANS "#ninscript;;;0;;;0;;;0";
 			close( CHANS );
 			$self->read_Config;
 		} else {
+			#TODO Print to stderrs
 			print STDOUT "Error: $! => ./$self->{config}->{channel_file}\nDo you have appropriate rights?!\n";
 		}
     }
@@ -215,77 +227,84 @@ sub read_Config {
 }
 
 # Save Configuration
+#TODO disable rearrange config file
 sub save_Config {
     my $self   = shift;
     my $ret    = 0;
     my $config = $self->{config};
     my %config = %$config;
     undef $config;
-    $self->log( 2, "<Main> Saving Configuration." );
+    $self->log( 2, "<".$self->{_TAG}."> Saving Configuration." );
     $ret = 1 if SaveConfig( $self->{_CONFIG}, \%config );
     return $ret;
 }
 
 # Setup the IRC Connection
-sub setup_IRC {
-    my $self = shift;
-    $self->read_Config;
-    #print Dumper($self)."\n";
-    $self->log(2, "<Main> Using IPv6 for Connections!") if ($self->{config}->{irc_ipv6} == 1);
-    $self->log(2, "<Main> Using SSL for Connections!") if ($self->{config}->{irc_ssl} == 1);
-    my $IRC = $self->{_IRC};
-    $self->{conn}  = $IRC->newconn(
-        Nick      => $self->{config}->{irc_nickname},
-        Server    => "$self->{config}->{irc_server}",
-        Port      => $self->{config}->{irc_port},
-        Username  => $self->{config}->{irc_ident},
-        Ircname   => $self->{config}->{irc_email},
-        LocalAddr => $self->{config}->{irc_hostname},
-        SSL       => $self->{config}->{irc_ssl},
-        IPV6	  => $self->{config}->{irc_ipv6}
-    );
-    #$self->{ip} = $self->get_IP;
-    $self->schedule_Save;
-
-    #  $self->schedule_checkIP; # Nur bei dynamischen Verbindungen
-    #$self->connect_DB;
-    #my $pid = $self->{_PARTYLINE}->create_Server;
-    #print "PID: $pid\n";
-    return 1 if defined $self->{conn} || return 0;
-}
+#sub setup_IRC {
+#	my $self = shift;
+#    $self->read_Config;
+#    #print Dumper($self)."\n";
+#    $self->log(2, "<Main> Using IPv6 for Connections!") if ($self->{config}->{irc_ipv6} == 1);
+#    $self->log(2, "<Main> Using SSL for Connections!") if ($self->{config}->{irc_ssl} == 1);
+#    my $IRC = $self->{_IRC};
+#    $self->{conn}  = $IRC->newconn(
+#        Nick      => $self->{config}->{irc_nickname},
+#        Server    => "$self->{config}->{irc_server}",
+#        Port      => $self->{config}->{irc_port},
+#        Username  => $self->{config}->{irc_ident},
+#        Ircname   => $self->{config}->{irc_email},
+#        LocalAddr => $self->{config}->{irc_hostname},
+#        SSL       => $self->{config}->{irc_ssl},
+#        IPV6	  => $self->{config}->{irc_ipv6}
+#    );
+#    #$self->{ip} = $self->get_IP;
+#    $self->schedule_Save;
+#
+#    #  $self->schedule_checkIP; # Nur bei dynamischen Verbindungen
+#    #$self->connect_DB;
+#    #my $pid = $self->{_PARTYLINE}->create_Server;
+#    #print "PID: $pid\n";
+#    return 1 if defined $self->{conn} || return 0;
+#}
 
 sub start_IRC {
     my $self = shift;
-    my $IRC  = $self->{_IRC};
-    $IRC->start();
+    $self->read_Config;
+    #my $IRC  = $self->{_IRC};
+    #$IRC->start();
+	$self->{_IRC} = new ninBot::IRC::Bot($self);          
+	$self->{_IRC}->run();              
+    $self->schedule_Save;
+    $poe_kernel->run();
 }
 
 # Adds the handler for the IRC messages
-sub setup_Handler {
-    my $self = shift;
-    my $conn = $self->{conn};
-    if (    $conn->add_global_handler( 'endofmotd',     \&IRC_on_connect )
-        and $conn->add_global_handler( 'disconnect',    \&IRC_on_disconnect )
-        and $conn->add_global_handler( 'nicknameinuse', \&IRC_on_nick_in_use )
-        and $conn->add_global_handler( 'join',          \&IRC_on_join )
-        and $conn->add_global_handler( 'part',          \&IRC_on_part )
-        and $conn->add_global_handler( 'quit',          \&IRC_on_quit )
-        and $conn->add_global_handler( 'nick',          \&IRC_on_nick_change )
-        and $conn->add_global_handler( 'public',        \&IRC_on_public )
-        and $conn->add_global_handler( 'kick',          \&IRC_on_kick )
-        and $conn->add_global_handler( 'msg',           \&IRC_on_private )
-        and $conn->add_global_handler( 'invite',        \&IRC_on_invite )
-        and $conn->add_global_handler( 'cversion',      \&IRC_on_ctcp_version )
-        and $conn->add_global_handler( 'whoisuser',		\&IRC_on_whoisuser )
-        and $conn->add_global_handler( 'namreply',      \&IRC_on_names_reply ) )
-    {
-        return 1;
-    }
-    else {
-        return 0;
-    }
-    return 1;
-}
+#sub setup_Handler {
+#    my $self = shift;
+#    my $conn = $self->{conn};
+#    if (    $conn->add_global_handler( 'endofmotd',     \&IRC_on_connect )
+#        and $conn->add_global_handler( 'disconnect',    \&IRC_on_disconnect )
+#        and $conn->add_global_handler( 'nicknameinuse', \&IRC_on_nick_in_use )
+#        and $conn->add_global_handler( 'join',          \&IRC_on_join )
+#        and $conn->add_global_handler( 'part',          \&IRC_on_part )
+#        and $conn->add_global_handler( 'quit',          \&IRC_on_quit )
+#        and $conn->add_global_handler( 'nick',          \&IRC_on_nick_change )
+#        and $conn->add_global_handler( 'public',        \&IRC_on_public )
+#        and $conn->add_global_handler( 'kick',          \&IRC_on_kick )
+#        and $conn->add_global_handler( 'msg',           \&IRC_on_private )
+#        and $conn->add_global_handler( 'invite',        \&IRC_on_invite )
+#        and $conn->add_global_handler( 'cversion',      \&IRC_on_ctcp_version )
+#        and $conn->add_global_handler( 'whoisuser',		\&IRC_on_whoisuser )
+#        and $conn->add_global_handler( 'namreply',      \&IRC_on_names_reply ) )
+#        #and $conn->add_global_handler( 'motd',          \&IRC_on_motd ) )
+#    {
+#        return 1;
+#    }
+#    else {
+#        return 0;
+#    }
+#    return 1;
+#}
 
 # handle_Events - Handles the events
 sub handle_Event {
@@ -344,13 +363,13 @@ sub quit {
 # TODO: change to some better ip getting method
 sub get_IP {
     my $self = shift;
-	$self->log( 3, "<Main> Trying to get your IP... " );
+	$self->log( 3, "<".$self->{_TAG}."> Trying to get your IP... " );
     my $ipfile = "http://athena.noxa.de/~michael/ip.pl";
     my $ip     = `lynx -source $ipfile`;
     if ($ip =~ m/.*\<pre\>(.*)\<\/pre\>.*/) {
 		$ip = $1;
 	} else { $ip = "0.0.0.0"; }
-    $self->log(3, "<Main> Got your IP: ".$ip );
+    $self->log(3, "<".$self->{_TAG}."> Got your IP: ".$ip );
     return $ip;
 }
 
@@ -367,8 +386,9 @@ sub schedule_Save {
         $self = $b;
     }
     my $user = $self->{_USER};
-    $irc->schedule( $self->{config}->{save_interval}, \&schedule_Save, $self );
-    $self->log( 3, "<Main> Scheduled Saving!" );
+    #TODO schedule Save
+    #$irc->schedule( $self->{config}->{save_interval}, \&schedule_Save, $self );
+    $self->log( 3, "<".$self->{_TAG}."> Scheduled Saving!" );
     $self->save_Config;
     $user->reload;
 }
@@ -395,7 +415,7 @@ sub schedule_checkIP {
         $self->{conn}->connect;
     }
     $irc->schedule( 60, \&schedule_checkIP, $self );
-    $self->log( 2, "<Main> Check IP changed: $changed" );
+    $self->log( 2, "<".$self->{_TAG}."> Check IP changed: $changed" );
 }
 
 # Is Channel a banned Channel
@@ -416,33 +436,6 @@ sub IRC_on_disconnect {
     my $self = &main::get_Self;
     $self->log( 1, "<Main:IRC> Disconnected from " . $event->from() . " (" . ( $event->args() )[0] . "). Attempting to reconnect..." );
     $irc->connect();
-}
-
-
-
-
-
-# IRC Handler on connect
-sub IRC_on_connect {
-    my $self  = &main::get_Self;
-    my $irc   = shift;
-    my $event = shift;
-    $self->log( 1, "<Main:IRC> Connection established!" );
-    if ( $self->{config}->{irc_botmode} == 1 ) {
-        # Setting Botmode (euirc.net appliance)
-        $self->log( 1, "<Main:IRC> Botmode forced! Setting +B-x" );
-        my $mynick = $self->{config}->{irc_nickname};
-        $self->{conn}->sl_real( "MODE " . $mynick . " +B" );
-		$self->{conn}->sl_real( "MODE " . $mynick . " -x" );
-    }
-    if ( defined $self->{channels} ) {
-        my @start_chans = keys %{ $self->{channels} };
-        foreach (@start_chans) {
-            $self->log( 2, "<Main:IRC> Joining $_" );
-            $self->{_CHANNEL}->{$_} = ninbot::channel->new( '_NAME' => $_ );
-        }
-    }
-
 }
 
 # IRC Handler on invite
@@ -523,7 +516,8 @@ sub IRC_on_quit {
     my $event = shift;
     my $stats = $self->{_STATS};
     $stats->inc_name("irc-quit");
-    foreach my $chan ( keys $self->{_CHANNEL} ) {
+    my %channel = $self->{_CHANNEL};
+    foreach my $chan ( keys %channel ) {
         $self->{_CHANNEL}->{$chan}->del_name( $event->{nick} );
         $stats->inc_name("irc-chan-".$chan."-quit");
     }
@@ -540,7 +534,8 @@ sub IRC_on_nick_change {
     #print Dumper($event);
     my $oldnick = $event->{nick};
     my $newnick = $event->{args}[0];
-    foreach my $chan ( keys $self->{_CHANNEL} ) {
+    my %channel = $self->{_CHANNEL};
+    foreach my $chan ( keys %channel ) {
         $self->{_CHANNEL}->{$chan}->change_name( $oldnick, $newnick );
     }
     $self->log( 4, "<Main:IRC> Nickchange Event received from $oldnick->$newnick." );
@@ -958,7 +953,7 @@ sub IRC_on_kick {
         if ( $user eq $self->{config}->{irc_nickname} ) {
             $self->log( 1, "<Main:IRC> I was kicked from " . $from_channel );
             $self->{conn}->join($from_channel);
-            $self->{conn}->privmsg( $from_channel, "Das nächste mal gehts auch freundlicher! *beleidigtsei*" );
+            $self->{conn}->privmsg( $from_channel, "Das nï¿½chste mal gehts auch freundlicher! *beleidigtsei*" );
             $self->{conn}->part($from_channel);
         }
     }

@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-package ninbot::script;
+package ninBot::Script;
 
 use strict;
 use Data::Dumper;
@@ -71,7 +71,7 @@ sub _parse {
 
     #print "SCRIPT DEBUG: $script\n\n";
     my @cmds            = split( /;/, $script );
-    my $conn            = $self->{_CONN};
+    my $irc            = $self->{_BOT}->{_IRC};
     my $inter           = $self->{_PARENT};
     my $calc            = $self->{_BOT}->{_CALC};
     my $nick            = $self->{-nickname};
@@ -106,7 +106,8 @@ sub _parse {
                         my ( undef, $calc_script ) = @_;
                         $self->_parse($calc_script);
                     };
-                    $conn->schedule( $time, $after_script, $script_temp );
+                    #TODO Script Temp
+                    #$conn->schedule( $time, $after_script, $script_temp );
                     $bot->log( 3, "<Script> Delay of $time seconds from $nick($level) on $chan"
                     );
                     last;
@@ -121,11 +122,10 @@ sub _parse {
                     foreach my $entry (@stack) {
                         $output .= $entry . " ";
                     }
-                    $conn->privmsg( $chan,
-                        "Stack " . $stack_name . ": " . $output );
+                    $irc->say(channel => $chan, body => "Stack " . $stack_name . ": " . $output );
                 }
                 else {
-                    $conn->privmsg( $chan, "No Stack by that name!" );
+                	$irc->say(channel => $chan, body => "No Stack by that name!" );
                 }
             }
             ## Debug end
@@ -144,27 +144,27 @@ sub _parse {
                   . $r_date . ", "
                   . $r_calc[6] . "/"
                   . $r_calc[7] . "]";
-                $conn->privmsg( $chan, $send_text );
+                $irc->say(channel => $chan, body => $send_text );
             }
             elsif ( $com =~ m/msg\W+(.*?)\W+\"(.*)\"/i ) {
                 my $to_nick  = $1;
                 my $msg_text = $2;
-                $conn->privmsg( $to_nick, $msg_text );
+                $irc->say(channel => $to_nick, body => $msg_text );
             }
             elsif ( $com =~ m/msg\W+\"(.*)\"/i ) {
                 my $to_nick  = $nick;
                 my $msg_text = $1;
-                $conn->privmsg( $to_nick, $msg_text );
+                $irc->say(channel => $to_nick, body => $msg_text );
             }
             elsif ( $com =~ m/notice\W+(.*?)\W+\"(.*)\"/i ) {
                 my $to_nick     = $1;
                 my $notice_text = $2;
-                $conn->notice( $to_nick, $notice_text );
+                $irc->notice(channel => $to_nick, body => $notice_text );
             }
             elsif ( $com =~ m/notice\W+\"(.*)\"/i ) {
                 my $to_nick     = $nick;
                 my $notice_text = $1;
-                $conn->notice( $to_nick, $notice_text );
+                $irc->notice(channel => $to_nick, body => $notice_text );
             }
             else {
 
@@ -197,7 +197,7 @@ sub _replace_Vars {
     my $command = $self->{-command};
     my $return  = $self->{-return};
     my $calc    = $bot->{_CALC};
-    my $conn    = $self->{_CONN};
+    my $irc    = $self->{_BOT}->{_IRC};
     my $develop = $self->{_DEVELOP};
     my $stats   = $bot->{_STATS};
     my @devel   = split( /;;/, $develop );
@@ -499,7 +499,7 @@ sub _replace_Vars {
 
         #my @c = $calc->get_Calc("data-var-".$calc_name);
         my @c = $calc->get_Calc($calc_name);
-        my $var = $c[2] if defined $c[2];
+        my $var = $c[1] if defined $c[1];
         $var = $self->_replace_Vars($var) if defined $var;
         $com =~ s/\[\[(.*?)\]\]/$var/gi if defined $var;
     }
@@ -594,7 +594,7 @@ sub enable_cmds {
     my ( $script_self, $do_this, $nick, $chan, $level, $param, $cmd_count,
         @cmds )
       = @_;
-    my $conn  = $script_self->{_CONN};
+    my $irc  = $script_self->{_BOT}->{_IRC};
     my $bot   = $script_self->{_BOT};
     my $inter = $script_self->{_PARENT};
     delete $inter->{command_disables};
@@ -608,7 +608,7 @@ sub enable_cmds {
         my @d_cmds = @$c_stack;
         foreach (@d_cmds) {
             my ( $d_type, $d_chan, $d_message ) = split( /:::/, $_ );
-            $conn->$d_type( $d_chan, $d_message );
+            $irc->$d_type( channel => $d_chan, body => $d_message );
         }
     }
     $inter->{command_stack}     = [];
@@ -621,15 +621,15 @@ sub run {
         @cmds )
       = @_;
     my $self = &main::get_Self;
-    my $conn = $self->{conn};
+    my $irc = $self->{_BOT}->{_IRC};
     my $calc = $self->{_CALC};
     $do_this =~ s/^"(.*)"$/$1/;
     $do_this =~ s/\s/_/g;
     my @run_calc = $calc->get_Calc( "data-prg-" . $do_this );
-    if ( defined $run_calc[2] ) {
+    if ( defined $run_calc[1] ) {
 
-        if ( $level >= $run_calc[7] or $nick = $run_calc[3] ) {
-            my $ret = $script_self->_parse( $run_calc[2] );
+        if ( $level >= $run_calc[6] or $nick = $run_calc[2] ) {
+            my $ret = $script_self->_parse( $run_calc[1] );
         }
     }
     $self->log( 5, "Script Module: run = Run subroutine data-prg-$do_this from $nick($level) on $chan");
@@ -640,15 +640,15 @@ sub cmd {
         @cmds )
       = @_;
     my $self = &main::get_Self;
-    my $conn = $self->{conn};
+    my $irc = $self->{_BOT}->{_IRC};
     my $calc = $self->{_CALC};
     $do_this =~ s/^"(.*)"$/$1/;
     $do_this =~ s/\s/_/g;
     my @run_calc = $calc->get_Calc( "com-" . $do_this );
-    if ( defined $run_calc[2] ) {
+    if ( defined $run_calc[1] ) {
 
-        if ( $level >= $run_calc[7] or $nick = $run_calc[3] ) {
-            my $ret = $script_self->_parse( $run_calc[2] );
+        if ( $level >= $run_calc[6] or $nick = $run_calc[2] ) {
+            my $ret = $script_self->_parse( $run_calc[1] );
         }
     }
     $self->log( 5, "<Script> cmd = Run command com-$do_this from $nick($level) on $chan" );
@@ -656,7 +656,7 @@ sub cmd {
 
 sub nif {
     my ( $self, $do_this, $nick, $chan, $level, $param, $cmd_count, @cmds ) = @_;
-    my $conn        = $self->{_CONN};
+    my $irc        = $self->{_BOT}->{_IRC};
     my $bot         = $self->{_BOT};
     my $count       = ${$cmd_count};
     my $if_script   = "";
@@ -747,7 +747,7 @@ sub nif {
 sub if {
     my ( $script_self, $do_this, $nick, $chan, $level, $param, $cmd_count, @cmds ) = @_;
     my $self  = &main::get_Self;
-    my $conn  = $script_self->{_CONN};
+    my $irc  = $script_self->{_BOT}->{_IRC};
     my $bot   = $script_self->{_BOT};
     my $count = $script_self->{_COUNT};
 
@@ -815,7 +815,7 @@ sub if {
 # say "WHAT" - says WHAT to actual channel
 sub say {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
-    my $conn    = $script_self->{_CONN};
+    my $irc    = $script_self->{_BOT}->{_IRC};
     my $bot     = $script_self->{_BOT};
     my $inter   = $script_self->{_PARENT};
     my $command = $script_self->{-command};
@@ -839,7 +839,7 @@ sub say {
         $bot->log( 5, "<Script> say = Delayed PrivMsg '$do_this' from $nick($level) to $chan");
     }
     else {
-        $conn->privmsg( $chan, $do_this );
+        $irc->say(channel => $chan, body => $do_this );
         $bot->log( 5, "<Script> say = PrivMsg '$do_this' from $nick($level) to $chan" );
     }
 }
@@ -847,7 +847,7 @@ sub say {
 # me "WHAT" - does an action WHAT to actual channel
 sub me {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
-    my $conn     = $script_self->{_CONN};
+    my $irc     = $script_self->{_BOT}->{_IRC};
     my $bot      = $script_self->{_BOT};
     my $inter    = $script_self->{_PARENT};
     my $command  = $script_self->{-command};
@@ -871,7 +871,7 @@ sub me {
         $bot->log( 5, "<Script> me = Delayed Action '$do_this' from $nick($level) to $chan" );
     }
     else {
-        $conn->me( $chan, $do_this );
+        $irc->emote( channel => $chan, body => $do_this );
         $bot->log( 5, "<Script> me = Action '$do_this' from $nick($level) to $chan" );
     }
 }
@@ -879,7 +879,7 @@ sub me {
 sub return {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self = &main::get_Self;
-    my $conn = $self->{conn};
+    my $irc = $self->{_BOT}->{_IRC};
     $do_this =~ s/^\s*(.*)\s*/$1/;
     $do_this =~ s/^"(.*)"$/$1/;
     $do_this = $script_self->_replace_Vars($do_this);
@@ -890,7 +890,7 @@ sub return {
 sub set {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self       = &main::get_Self;
-    my $conn       = $self->{conn};
+    my $irc       = $self->{_BOT}->{_IRC};
     my $calc       = $self->{_CALC};
     my $authorized = 1;
     my $set_name;
@@ -912,9 +912,9 @@ sub set {
             $set_value =~ s/^"(.*)"$/$1/;
             my @set_calc   = $calc->get_Calc($set_name);
             my $set_author = $nick;
-            if ( $set_calc[1] ) {
-                $set_author = $set_calc[3];
-                if ( $level < $set_calc[7] or $set_calc[3] !~ m/^$nick$/ ) {
+            if ( $set_calc[0] ) {
+                $set_author = $set_calc[2];
+                if ( $level < $set_calc[6] or $set_calc[2] !~ m/^$nick$/ ) {
                     $authorized = 0;
                 }
             }
@@ -930,7 +930,7 @@ sub set {
 sub inc {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self       = &main::get_Self;
-    my $conn       = $self->{conn};
+    my $irc       = $self->{_BOT}->{_IRC};
     my $calc       = $self->{_CALC};
     my $authorized = 1;
     $do_this = $script_self->_replace_Vars($do_this);
@@ -940,11 +940,11 @@ sub inc {
         $inc_name =~ s/^"(.*)"$/$1/;
         my @inc_calc   = $calc->get_Calc($inc_name);
         my $inc_author = $nick;
-        if ( $inc_calc[1] ) {
-            $inc_author = $inc_calc[3];
-            $inc_value  = $inc_calc[2];
+        if ( $inc_calc[0] ) {
+            $inc_author = $inc_calc[2];
+            $inc_value  = $inc_calc[1];
             $inc_value++;
-            if ( $level < $inc_calc[7] or $inc_calc[6] !~ m/^rw$/i ) {
+            if ( $level < $inc_calc[6] or $inc_calc[5] !~ m/^rw$/i ) {
                 $authorized = 0;
             }
         }
@@ -959,7 +959,7 @@ sub inc {
 sub n_inc {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self       = &main::get_Self;
-    my $conn       = $self->{conn};
+    my $irc       = $self->{_BOT}->{_IRC};
     my $calc       = $self->{_CALC};
     my $authorized = 1;
     my $inc_name;
@@ -970,11 +970,11 @@ sub n_inc {
         $inc_name =~ s/^"(.*)"$/$1/;
         my @inc_calc   = $calc->get_Calc($inc_name);
         my $inc_author = $nick;
-        if ( $inc_calc[1] ) {
-            $inc_author = $inc_calc[3];
-            $inc_value  = $inc_calc[2];
+        if ( $inc_calc[0] ) {
+            $inc_author = $inc_calc[2];
+            $inc_value  = $inc_calc[1];
             $inc_value++;
-            if ( $level < $inc_calc[7] or $inc_calc[6] !~ m/^rw$/i ) {
+            if ( $level < $inc_calc[6] or $inc_calc[5] !~ m/^rw$/i ) {
                 $authorized = 0;
             }
         }
@@ -1030,7 +1030,7 @@ sub push {
 sub dec {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self       = &main::get_Self;
-    my $conn       = $self->{conn};
+    my $irc       = $self->{_BOT}->{_IRC};
     my $calc       = $self->{_CALC};
     my $authorized = 1;
     my $dec_name;
@@ -1041,11 +1041,11 @@ sub dec {
         $dec_name =~ s/^"(.*)"$/$1/;
         my @dec_calc   = $calc->get_Calc($dec_name);
         my $dec_author = $nick;
-        if ( $dec_calc[2] ) {
-            $dec_author = $dec_calc[3];
-            $dec_value  = $dec_calc[2];
+        if ( $dec_calc[0] ) {
+            $dec_author = $dec_calc[2];
+            $dec_value  = $dec_calc[1];
             $dec_value--;
-            if ( $level < $dec_calc[7] or $dec_calc[6] !~ m/^rw$/i ) {
+            if ( $level < $dec_calc[6] or $dec_calc[5] !~ m/^rw$/i ) {
                 $authorized = 0;
             }
         }
@@ -1060,7 +1060,7 @@ sub dec {
 sub n_dec {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self       = &main::get_Self;
-    my $conn       = $self->{conn};
+    my $irc       = $self->{_BOT}->{_IRC};
     my $calc       = $self->{_CALC};
     my $authorized = 1;
     my $dec_name;
@@ -1071,11 +1071,11 @@ sub n_dec {
         $dec_name =~ s/^"(.*)"$/$1/;
         my @dec_calc   = $calc->get_Calc($dec_name);
         my $dec_author = $nick;
-        if ( $dec_calc[2] ) {
-            $dec_author = $dec_calc[3];
-            $dec_value  = $dec_calc[2];
+        if ( $dec_calc[1] ) {
+            $dec_author = $dec_calc[2];
+            $dec_value  = $dec_calc[1];
             $dec_value--;
-            if ( $level < $dec_calc[7] or $dec_calc[6] !~ m/^rw$/i ) {
+            if ( $level < $dec_calc[6] or $dec_calc[5] !~ m/^rw$/i ) {
                 $authorized = 0;
             }
         }
@@ -1090,7 +1090,7 @@ sub n_dec {
 sub n_set {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self       = &main::get_Self;
-    my $conn       = $self->{conn};
+    my $irc       = $self->{_BOT}->{_IRC};
     my $calc       = $self->{_CALC};
     my $authorized = 1;
     my $set_name;
@@ -1102,9 +1102,9 @@ sub n_set {
         $set_value =~ s/^"(.*)"$/$1/;
         my @set_calc   = $calc->get_Calc($set_name);
         my $set_author = $nick;
-        if ( $set_calc[2] ) {
-            $set_author = $set_calc[3];
-            if ( $level < $set_calc[7] or $set_calc[3] !~ m/^$nick$/ ) {
+        if ( $set_calc[1] ) {
+            $set_author = $set_calc[2];
+            if ( $level < $set_calc[6] or $set_calc[2] !~ m/^$nick$/ ) {
                 $authorized = 0;
             }
         }
@@ -1120,9 +1120,9 @@ sub n_set {
 sub part {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self = &main::get_Self;
-    my $conn = $self->{conn};
+    my $irc = $self->{_BOT}->{_IRC};
     $do_this = $script_self->_replace_Vars($do_this);
-    $conn->part($do_this);
+    $irc->part($do_this);
     $self->log( 5, "<Script> part = Parting channel $do_this from $nick($level) on $chan" );
 }
 
@@ -1130,10 +1130,10 @@ sub part {
 sub kick {
     my ( $script_self, $do_this, $nick, $chan, $level, $param ) = @_;
     my $self = &main::get_Self;
-    my $conn = $self->{conn};
+    my $irc = $self->{_BOT}->{_IRC};
     $do_this = $script_self->_replace_Vars($do_this);
     my ( $k_nick, $k_msg ) = split( /\ /, $do_this );
-    $conn->sl("KICK $chan $k_nick :$k_msg");
+    $irc->kick($chan, $k_nick, $k_msg);
     $self->log( 5, "<Script> kick = Kicking $nick from channel $chan with message $do_this " );
 }
 

@@ -63,7 +63,6 @@ my %_udef = ();
 # Creates a new IRC object and assigns some default attributes.
 sub new {
   my $proto = shift;
-  
   my $self = {                # obvious defaults go here, rest are user-set
     _debug      => $_[0]->{_debug},
     #_debug		=> 1,
@@ -74,7 +73,7 @@ sub new {
     _nick       => $ENV{IRCNICK} || eval { scalar getpwuid($>) } || $ENV{USER} || $ENV{LOGNAME} || "WankerBot",
     _ignore     => {},
     _handler    => {},
-    _verbose    =>  0,       # Is this an OK default?
+    _verbose    =>  1,       # Is this an OK default?
     _parent     =>  shift,
     _frag       =>  '',
     _connected  =>  0,
@@ -86,12 +85,17 @@ sub new {
     _format     => { 'default' => "[%f:%t]  %m  <%d>", },
   };
   
+  $self->{_charset} = 'utf8' if !defined $self->{_charset};
+  
   bless $self, $proto;
   # do any necessary initialization here
+  $self->init or die "init did not return a true value - dying";
   $self->connect(@_) if @_;
   
   return $self;
 }
+
+sub init { return 1; }
 
 # Takes care of the methods in %autoloaded
 # Sets specified attribute, or returns its value if called without args.
@@ -270,12 +274,17 @@ sub connect {
   
   if($self->ssl) {
     require IO::Socket::SSL;
-    
-    $self->socket(IO::Socket::SSL->new(PeerAddr  => $self->server,
+    $IO::Socket::SSL::DEBUG = 2;
+    my $socket = IO::Socket::SSL->new( SSL_startHandshake => 2,
+                                       SSL_verify_mode => 0,
+                                       SSL_hostname => 'irc.ninirc.ga',
+                                       PeerAddr  => $self->server,
                                        PeerPort  => $self->port,
                                        Proto     => "tcp",
-                                       LocalAddr => $self->hostname,
-                                       ));
+                                       #LocalAddr => $self->hostname,
+                                       );
+    $socket->blocking(0);
+    $self->socket($socket);
   } elsif (!$self->ssl and $self->ipv6) {
 	$self->socket(IO::Socket::INET6->new(PeerAddr  => $self->server,
                                         PeerPort  => $self->port,
@@ -296,7 +305,7 @@ sub connect {
     $self->error(1);
     return;
   }
-  
+
   # Send a PASS command if they specified a password. According to
   # the RFC, we should do this as soon as we connect.
   if (defined $password) {
@@ -304,18 +313,27 @@ sub connect {
   }
   
   # Now, log in to the server...
-  unless ($self->sl('NICK ' . $self->nick()) and
-          $self->sl(sprintf("USER %s %s %s :%s",
+  #unless ($self->sl('NICK ' . $self->nick()) and
+   #       $self->sl(sprintf("USER %s %s %s :%s",
+   #                         $self->username(),
+   #                         "foo.bar.com",
+   #                         $self->server(),
+   #                         $self->ircname()))) {
+   # carp "Couldn't send introduction to server: $!";
+   # $self->error(1);
+   # $! = "Couldn't send NICK/USER introduction to " . $self->server;
+   # return;
+    $self->sl('NICK ' . $self->nick());
+    $self->sl("PROTOCTL NAMESX");
+   # $self->sl('USERHOST nin_');
+
+   # return;
+  #}
+  $self->sl(sprintf("USER %s %s %s :%s",
                             $self->username(),
                             "foo.bar.com",
                             $self->server(),
-                            $self->ircname()))) {
-    carp "Couldn't send introduction to server: $!";
-    $self->error(1);
-    $! = "Couldn't send NICK/USER introduction to " . $self->server;
-    return;
-  }
-  
+                            $self->ircname()));
   $self->{_connected} = 1;
   $self->parent->addconn($self);
 }

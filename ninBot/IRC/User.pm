@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-package ninbot::user;
+package ninBot::IRC::User;
 
 use strict;
 use DBI;
@@ -24,7 +24,6 @@ use Data::Dumper;
 sub new {
     my $class     = shift;
     my $self_user = {@_};
-
     # my $self = {
     #              '-nickhandle' => '', #string
     #              '-flags' => '',

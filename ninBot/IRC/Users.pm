@@ -15,12 +15,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc., 59
 # Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-package ninbot::users;
+package ninBot::IRC::Users;
 
 use strict;
 use DBI;
 use Data::Dumper;
-use ninbot::user;
+use ninBot::IRC::User;
 
 sub new {
 	my $class = shift;
@@ -28,7 +28,7 @@ sub new {
     bless( $self, $class );
     $self->{_BOT} = &main::get_Self;
     $self->{_BOT}->log( 3, "<Users> Initialized..." );
-    $self->{_USERS} = [];
+    $self->{_USERS} = ();
     $self->{_WHOIS} = "";
     $self->reload;
     return $self;
@@ -38,14 +38,15 @@ sub reload {
     my $self = shift;
     my $bot_self = &main::get_Self;
     my @users    = $bot_self->{_DBH}->select_all("user");
-    $self->{_USERS} = [];
+    $self->{_USERS} = ();
+    my @_users = ();
     foreach my $user_string (@users) {
         my @row               = split( /;;;/, $user_string );
         my $user_handle       = $row[0];
         my $user_hosts        = $row[1];
         my $user_flag         = $row[2];
         my $user_password     = $row[3];
-        my $new_user_instance = ninbot::user->new(
+        my $new_user_instance = ninBot::IRC::User->new(
             '-nickhandle' => $user_handle,     #string
             '-flags'      => $user_flag,
             '-hosts'      => $user_hosts,
@@ -53,7 +54,9 @@ sub reload {
             '-passwd'     => $user_password,
         );
         #push( @$self, $new_user_instance );
-        push($self->{_USERS}, $new_user_instance);
+        push(@_users, $new_user_instance);
+        $self->{_USERS} = \@_users;
+        #print Dumper($self->{_USERS});
     }
     return $self;
 }
@@ -130,7 +133,6 @@ sub check_Level {    # ( _SELF_, String $from )
     $self->log( 5, "<Users> check_Level($from)" );
     my ( $from_user, $host )  = split( /\@/, $from );
     my ( $nick,      $ident ) = split( /\!/, $from_user );
-    
     foreach my $tmp_user (@{$users->{_USERS}}) {
         if ( $tmp_user->chk_hostmask($from) == 1 ) {
             $ret = $tmp_user->get_flags();

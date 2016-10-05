@@ -4,6 +4,7 @@ ninbot.channels
 ninbot.sqlite
 documentation.odt
 ninbot.conf
+ninbot.ch
 ninbot.log
 nicks/*
 test.pl
@@ -11,3 +12,4 @@ web/.htaccess
 
 Config/*
 IRC/IO/*
+.project
